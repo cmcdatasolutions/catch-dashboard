@@ -4,20 +4,23 @@
     "FirstName": "Janice",
     "LastName": "Sparks",
     "EmailAddress": "janice.sparks@catchgh.org",
-    "Program": "ALL"
+    "Program": "ALL",
+    "Role": "admin"
   },
   {
     "RowCount": 2,
     "FirstName": "Brandi",
     "LastName": "Smith",
     "EmailAddress": "brandi.smith@houstontx.gov",
-    "Program": "ALL"
+    "Program": "ALL",
+    "Role": "admin"
   },
   {
     "RowCount": 3,
     "FirstName": "Michael",
     "LastName": "Creary",
     "EmailAddress": "creary.michael@digitaldataexperts.net",
-    "Program": "PIN"
+    "Program": "CHI",
+    "Role": "user"
   }
 ]
