@@ -1,0 +1,69 @@
+[
+  {
+    "run_number": 1,
+    "timestamp": "2026-06-17 12:34:08",
+    "total_docs": 11,
+    "compliant": 1,
+    "review_needed": 10,
+    "documents": [
+      "CATCH Insurance Proposal from USI.pdf",
+      "CATCH_ISF_3526_FINALdocx.pdf",
+      "CATCH and PrognosUS DUA FINAL 3.19.26.docx.pdf",
+      "DPP SupplierAgreementGeneral CATCH FL03.13.26.docx",
+      "Harmonic Health GUIDE Partner Organization Agreement_CATCH.pdf",
+      "CATCH HHD MSA Final.docx",
+      "CATCH Greater Houston PSA 2025-2030,CW2595700 - signed.pdf",
+      "Harmonic_CATCH_Care_Management_Agreement_Final_12926docx.pdf",
+      "CATCH Care Transitions Operations Manual.pdf",
+      "Common Spirit 2026.pdf",
+      "Cumulus Fully Executed Master Subscription Agreement.pdf"
+    ],
+    "changes": [
+      {
+        "type": "Added",
+        "document": "CATCH Insurance Proposal from USI.pdf"
+      },
+      {
+        "type": "Added",
+        "document": "CATCH_ISF_3526_FINALdocx.pdf"
+      },
+      {
+        "type": "Added",
+        "document": "CATCH and PrognosUS DUA FINAL 3.19.26.docx.pdf"
+      },
+      {
+        "type": "Added",
+        "document": "DPP SupplierAgreementGeneral CATCH FL03.13.26.docx"
+      },
+      {
+        "type": "Added",
+        "document": "Harmonic Health GUIDE Partner Organization Agreement_CATCH.pdf"
+      },
+      {
+        "type": "Added",
+        "document": "CATCH HHD MSA Final.docx"
+      },
+      {
+        "type": "Added",
+        "document": "CATCH Greater Houston PSA 2025-2030,CW2595700 - signed.pdf"
+      },
+      {
+        "type": "Added",
+        "document": "Harmonic_CATCH_Care_Management_Agreement_Final_12926docx.pdf"
+      },
+      {
+        "type": "Added",
+        "document": "CATCH Care Transitions Operations Manual.pdf"
+      },
+      {
+        "type": "Added",
+        "document": "Common Spirit 2026.pdf"
+      },
+      {
+        "type": "Added",
+        "document": "Cumulus Fully Executed Master Subscription Agreement.pdf"
+      }
+    ],
+    "notes": "11 document change(s) detected"
+  }
+]
