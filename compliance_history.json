@@ -65,5 +65,27 @@
       }
     ],
     "notes": "11 document change(s) detected"
+  },
+  {
+    "run_number": 2,
+    "timestamp": "2026-06-17 13:02:47",
+    "total_docs": 11,
+    "compliant": 1,
+    "review_needed": 10,
+    "documents": [
+      "DPP SupplierAgreementGeneral CATCH FL03.13.26.docx",
+      "CATCH and PrognosUS DUA FINAL 3.19.26.docx.pdf",
+      "CATCH HHD MSA Final.docx",
+      "CATCH Insurance Proposal from USI.pdf",
+      "CATCH Care Transitions Operations Manual.pdf",
+      "Cumulus Fully Executed Master Subscription Agreement.pdf",
+      "CATCH_ISF_3526_FINALdocx.pdf",
+      "Harmonic_CATCH_Care_Management_Agreement_Final_12926docx.pdf",
+      "CATCH Greater Houston PSA 2025-2030,CW2595700 - signed.pdf",
+      "Common Spirit 2026.pdf",
+      "Harmonic Health GUIDE Partner Organization Agreement_CATCH.pdf"
+    ],
+    "changes": [],
+    "notes": "No changes"
   }
 ]
