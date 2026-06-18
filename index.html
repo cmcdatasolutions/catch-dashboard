@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>CATCH Greater Houston – Compliance Dashboard</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;font-family:Arial,sans-serif;background:rgba(0,0,0,.30);background-color:#b3b3b3;color:#1a1a1a}
+  body{display:flex;flex-direction:column;min-height:100vh}
+  .header{background:#1F4E79;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:100}
+  .sticky-top{position:sticky;top:76px;z-index:90;background:#b3b3b3;padding-top:16px;padding-bottom:16px;margin-left:-28px;margin-right:-28px;padding-left:28px;padding-right:28px;box-shadow:0 4px 10px rgba(0,0,0,.18)}
+  .upload-bar{background:#EFF6FF;border:1.5px dashed #185FA5;border-radius:10px;padding:12px 20px;display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap}
+  .upload-bar-label{font-size:12px;color:#1e40af;font-weight:600;flex:1;min-width:200px}
+  .upload-bar-label span{font-weight:400;color:#6b7280;font-size:11px;display:block;margin-top:2px}
+  .upload-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;background:#185FA5;color:#fff;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:Arial,sans-serif;white-space:nowrap}
+  .upload-btn:hover{background:#0C447C}
+  .upload-status{font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;white-space:nowrap}
+  .upload-status.ok{background:#dcfce7;color:#166534}
+  .upload-status.err{background:#fee2e2;color:#991b1b}
+  .upload-status.idle{color:#6b7280}
+  .header-title{color:#fff;font-size:20px;font-weight:700;letter-spacing:.01em}
+  .header-sub{color:#9FC5E8;font-size:13px;margin-top:2px}
+  .header-badge{background:#2E75B6;color:#fff;font-size:12px;padding:4px 12px;border-radius:12px;font-weight:600}
+  .main{max-width:1400px;width:100%;margin:0 auto;padding:0 28px}
+  .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+  .kpi{background:#fff;border-radius:10px;padding:16px 18px;border:1px solid #e2e8f0;border-top:4px solid #e2e8f0}
+  .kpi.kpi-blue{border-top-color:#185FA5}.kpi.kpi-red{border-top-color:#A32D2D}
+  .kpi.kpi-amber{border-top-color:#854F0B}.kpi.kpi-green{border-top-color:#3B6D11}.kpi.kpi-navy{border-top-color:#1F4E79}
+  .kpi-label{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-weight:600}
+  .kpi-value{font-size:30px;font-weight:700}
+  .kpi-blue .kpi-value{color:#185FA5}.kpi-red .kpi-value{color:#A32D2D}
+  .kpi-amber .kpi-value{color:#854F0B}.kpi-green .kpi-value{color:#3B6D11}.kpi-navy .kpi-value{color:#1F4E79}
+  .section-title{font-size:13px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+  .prog-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;align-items:center}
+  .prog-chip{position:relative;padding:7px 16px;border-radius:20px;font-size:13px;cursor:pointer;border:1.5px solid #d1d5db;background:#fff;color:#000;font-weight:700;transition:all .15s;user-select:none}
+  .prog-chip:hover{border-color:#185FA5;color:#185FA5;background:#EFF6FF}
+  .prog-chip.active{background:#185FA5;color:#fff;border-color:#185FA5;font-weight:700}
+  .tooltip-box{display:none;position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);width:280px;background:#fff;border:1.5px solid #d1d5db;border-radius:10px;padding:12px 14px;font-size:12px;color:#1a1a1a;line-height:1.6;z-index:999;pointer-events:none;text-align:left;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+  .tooltip-box::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#d1d5db}
+  .prog-chip:hover .tooltip-box{display:block}
+  .filter-row{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-bottom:24px;padding:16px 20px;background:#fff;border-radius:10px;border:1px solid #e2e8f0}
+  .filter-group{display:flex;flex-direction:column;gap:5px;flex:1;min-width:200px}
+  .filter-label{font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em}
+  .filter-select{padding:8px 12px;border-radius:8px;border:1.5px solid #d1d5db;background:#fff;color:#374151;font-size:13px;font-family:Arial,sans-serif;cursor:pointer;width:100%}
+  .filter-select:focus{outline:none;border-color:#185FA5}
+  .filter-reset{padding:8px 16px;border-radius:8px;border:1.5px solid #d1d5db;background:#fff;color:#6b7280;font-size:13px;font-family:Arial,sans-serif;cursor:pointer;align-self:flex-end;white-space:nowrap}
+  .filter-reset:hover{border-color:#185FA5;color:#185FA5}
+  .card{background:#fff;border-radius:10px;padding:18px 20px;border:1px solid #e2e8f0}
+  .card-title{font-size:14px;font-weight:700;margin-bottom:14px;color:#1a1a1a}
+  .gap-section{background:#fff;border-radius:10px;border:1px solid #e2e8f0;overflow:hidden}
+  .gap-top{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #e2e8f0}
+  .gap-title{font-size:14px;font-weight:700;color:#1a1a1a}
+  .gap-count{font-size:13px;color:#6b7280;font-weight:400;margin-left:6px}
+  .export-btn{display:flex;align-items:center;gap:7px;padding:8px 18px;border-radius:8px;border:1.5px solid #185FA5;background:#185FA5;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;transition:all .15s}
+  .export-btn:hover{background:#0C447C;border-color:#0C447C}
+  .export-btn:disabled{opacity:.5;cursor:not-allowed}
+  .gap-wrap{max-height:420px;overflow-y:auto}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  thead{position:sticky;top:0;z-index:2}
+  th{text-align:left;padding:9px 14px;background:#F8FAFC;color:#374151;font-weight:700;font-size:11px;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.04em}
+  td{padding:9px 14px;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#1a1a1a}
+  tr:hover td{background:#f8fafc}
+  .badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700}
+  .badge-crit{background:#FCE4D6;color:#791F1F}
+  .badge-high{background:#FAEEDA;color:#633806}
+  .badge-med{background:#EAF3DE;color:#27500A}
+  .badge-ok{background:#dcfce7;color:#166534}
+  .empty{text-align:center;padding:3rem;color:#6b7280;font-size:14px}
+  .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px;align-items:start}
+  .chart-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden}
+  .chart-card-header{padding:16px 20px 12px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between}
+  .chart-card-title{font-size:13px;font-weight:700;color:#1a1a1a;letter-spacing:.01em}
+  .chart-card-body{padding:16px 20px}
+  .doc-bar-row{margin-bottom:14px}.doc-bar-row:last-child{margin-bottom:0}
+  .doc-name{font-size:11px;color:#6b7280;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+  .bar-wrap{display:flex;align-items:center;gap:8px}
+  .bar-track{height:22px;background:#f1f5f9;border-radius:6px;overflow:hidden;display:flex;flex:1}
+  .bar-total{font-size:12px;color:#374151;font-weight:700;min-width:24px;text-align:right}
+  .bar-seg{height:100%;transition:width .4s;display:flex;align-items:center;justify-content:center}
+  .bar-crit{background:#E24B4A}.bar-high{background:#EF9F27}.bar-med{background:#639922}
+  .pct-row{display:flex;align-items:center;gap:10px;margin-bottom:11px}.pct-row:last-child{margin-bottom:0}
+  .pct-name{font-size:11px;color:#6b7280;flex:0 0 140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+  .pct-track{flex:1;height:10px;background:#f1f5f9;border-radius:5px;overflow:hidden}
+  .pct-fill{height:100%;border-radius:5px;transition:width .4s}
+  .pct-val{font-size:12px;color:#374151;font-weight:700;min-width:44px;text-align:right}
+  .legend-row{display:flex;gap:12px;flex-wrap:wrap}
+  .leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#6b7280;font-weight:600}
+  .leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+  /* ── HISTORY SECTION ── */
+  .history-run{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px;margin-bottom:10px}
+  .history-run-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+  .history-run-title{font-size:13px;font-weight:700;color:#1F4E79}
+  .history-run-meta{font-size:12px;color:#6b7280}
+  .history-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;margin:2px}
+  .history-pill.added{background:#dcfce7;color:#166534}
+  .history-pill.removed{background:#fee2e2;color:#991b1b}
+  /* ── ADMIN PANEL ── */
+  .admin-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:8888;display:none;align-items:center;justify-content:center}
+  .admin-overlay.open{display:flex}
+  .admin-box{background:#fff;border-radius:14px;width:100%;max-width:760px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .admin-hdr{background:#1F4E79;padding:18px 24px;display:flex;align-items:center;justify-content:space-between}
+  .admin-hdr h2{color:#fff;font-size:15px;font-weight:700}
+  .admin-hdr p{color:rgba(255,255,255,.65);font-size:11px;margin-top:2px}
+  .admin-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:28px;height:28px;border-radius:6px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .admin-body{padding:20px 24px;overflow-y:auto;flex:1}
+  .admin-section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#6b7280;margin-bottom:12px;margin-top:20px}
+  .admin-section-title:first-child{margin-top:0}
+  .admin-table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px}
+  .admin-table th{text-align:left;padding:9px 12px;background:#f8fafc;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;border-bottom:2px solid #e5e7eb}
+  .admin-table td{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+  .admin-table tr:hover td{background:#f8fafc}
+  .prog-select{border:1px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:12px;font-family:Arial,sans-serif;color:#1a1a1a;background:#fff}
+  .del-btn{background:#fee2e2;border:none;color:#dc2626;border-radius:5px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif}
+  .del-btn:hover{background:#fecaca}
+  .admin-add-form{background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:16px 18px;margin-bottom:8px}
+  .admin-add-form h3{font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+  .admin-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .admin-form-field{display:flex;flex-direction:column;gap:4px}
+  .admin-form-field label{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
+  .admin-form-field input,.admin-form-field select{border:1px solid #d1d5db;border-radius:6px;padding:8px 10px;font-size:13px;font-family:Arial,sans-serif;outline:none}
+  .admin-form-field input:focus,.admin-form-field select:focus{border-color:#1F4E79}
+  .admin-save-btn{background:#1F4E79;color:#fff;border:none;border-radius:7px;padding:9px 20px;font-size:13px;font-weight:700;font-family:Arial,sans-serif;cursor:pointer}
+  .admin-save-btn:hover{background:#163d61}
+  .admin-save-btn:disabled{background:#9ca3af;cursor:not-allowed}
+  .admin-status{font-size:12px;font-weight:600;padding:8px 14px;border-radius:7px;margin-top:10px;display:none}
+  .admin-status.ok{background:#dcfce7;color:#166534}
+  .admin-status.err{background:#fee2e2;color:#991b1b}
+  /* ── LOGIN ── */
+  .login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
+  .login-box{background:#fff;border-radius:16px;padding:40px 44px;width:100%;max-width:420px;box-shadow:0 25px 60px rgba(0,0,0,.4)}
+  .login-logo{text-align:center;margin-bottom:28px}
+  .login-logo-icon{width:56px;height:56px;background:#1F4E79;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:12px}
+  .login-logo h2{font-size:18px;font-weight:700;color:#1a1a1a;margin-bottom:4px}
+  .login-logo p{font-size:12px;color:#6b7280}
+  .login-field{margin-bottom:16px}
+  .login-field label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+  .login-field input{width:100%;padding:11px 14px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;font-family:Arial,sans-serif;outline:none;transition:border .15s}
+  .login-field input:focus{border-color:#1F4E79}
+  .login-btn{width:100%;padding:12px;background:#1F4E79;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;font-family:Arial,sans-serif;cursor:pointer;transition:background .15s;margin-top:4px}
+  .login-btn:hover{background:#163d61}
+  .login-btn:disabled{background:#9ca3af;cursor:not-allowed}
+  .login-error{background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:600;margin-top:12px;display:none}
+  .login-loading{text-align:center;color:#6b7280;font-size:12px;margin-top:12px;display:none}
+  .login-footer{color:#94a3b8;font-size:11px;text-align:center;margin-top:20px}
+  .user-badge{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border-radius:8px;padding:6px 12px;font-size:12px;color:#fff;min-height:32px}
+  .user-badge:empty{display:none}
+  .logout-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;margin-left:8px}
+  .logout-btn:hover{background:rgba(255,255,255,.25)}
+  @media(max-width:900px){.charts-row{grid-template-columns:1fr}.kpi-grid{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:600px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- ADMIN PANEL -->
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-box">
+    <div class="admin-hdr">
+      <div><h2>&#9881; User Access Management</h2><p>Add, remove, or modify dashboard user permissions</p></div>
+      <button class="admin-close" onclick="closeAdmin()">&#10005;</button>
+    </div>
+    <div class="admin-body">
+      <div id="tokenSection" style="background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:8px;padding:12px 16px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#0369a1">&#128274; Source Token <span id="tokenStatus" style="font-weight:400;color:#16a34a"></span></div>
+            <div style="font-size:11px;color:#6b7280;margin-top:2px">Stored in browser memory only — cleared when tab closes.</div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+              style="padding:6px 10px;border:1.5px solid #93c5fd;border-radius:6px;font-size:12px;font-family:Arial,sans-serif;width:220px;outline:none"
+              onkeydown="if(event.key==='Enter')saveToken()"/>
+            <button onclick="saveToken()" style="background:#0369a1;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif">Set Token</button>
+            <button onclick="clearToken()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif" title="Clear">&#10005;</button>
+          </div>
+        </div>
+      </div>
+      <div class="admin-section-title">Current Users</div>
+      <table class="admin-table">
+        <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Program</th><th>Role</th><th>Action</th></tr></thead>
+        <tbody id="adminUserTable"></tbody>
+      </table>
+      <div class="admin-add-form">
+        <h3>&#43; Add New User</h3>
+        <div class="admin-form-grid">
+          <div class="admin-form-field"><label>First Name</label><input id="newFirstName" placeholder="First name"/></div>
+          <div class="admin-form-field"><label>Last Name</label><input id="newLastName" placeholder="Last name"/></div>
+          <div class="admin-form-field"><label>Email Address</label><input id="newEmail" type="email" placeholder="email@domain.com"/></div>
+          <div class="admin-form-field">
+            <label>Program Access</label>
+            <select id="newProgram">
+              <option value="ALL">ALL — Full Access</option>
+              <option value="GUIDE">GUIDE</option>
+              <option value="Care Transitions">Care Transitions</option>
+              <option value="CHI/PIN">CHI/PIN</option>
+              <option value="DPP">DPP</option>
+            </select>
+          </div>
+          <div class="admin-form-field">
+            <label>Role</label>
+            <select id="newRole"><option value="user">User</option><option value="admin">Admin</option></select>
+          </div>
+        </div>
+        <button class="admin-save-btn" onclick="addUser()">Add User</button>
+      </div>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e7eb">
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="admin-save-btn" id="saveGithubBtn" onclick="saveToGitHub()">&#128190; Save Changes</button>
+          <button class="admin-save-btn" onclick="refreshPermissions()" style="background:#16a34a">&#8635; Refresh Permissions</button>
+        </div>
+      </div>
+      <div class="admin-status" id="adminStatus"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">&#127973;</div>
+      <h2>CATCH Greater Houston</h2>
+      <p>Contract &amp; Compliance Dashboard &mdash; Secure Access</p>
+    </div>
+    <div class="login-field">
+      <label>Email Address</label>
+      <input type="email" id="loginEmail" placeholder="Enter your email address" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Access Dashboard</button>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-loading" id="loginLoading">&#9203; Verifying access...</div>
+    <div class="login-footer">Access is restricted to authorized CATCH program staff.<br>Contact your administrator if you need access.</div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="header-title">CATCH Greater Houston</div>
+    <div class="header-sub">Contract &amp; Compliance Dashboard</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div id="userBadge" class="user-badge"></div>
+    <div class="header-badge">CMC Data Solutions</div>
+  </div>
+</div>
+
+<div class="main" style="padding-top:16px;padding-bottom:32px">
+
+  <!-- DATA SOURCE BAR -->
+  <div class="upload-bar">
+    <div class="upload-bar-label">
+      📂 Data Source
+      <span>Auto-loads from source on login. Upload a local file to override.</span>
+    </div>
+
+    <button class="upload-btn" onclick="autoLoadExcel()"><i class="ti ti-refresh"></i> Reload from Source</button>
+    <span class="upload-status idle" id="uploadStatus">Loading from Source…</span>
+  </div>
+
+  <div class="sticky-top">
+    <div style="background:#fff;border-radius:10px;border:1px solid #e2e8f0;padding:18px 20px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.07)">
+      <div class="section-title">Summary</div>
+      <div class="kpi-grid" id="kpiGrid"></div>
+    </div>
+    <div class="filter-row" style="margin-top:0;margin-bottom:0;box-shadow:0 2px 8px rgba(0,0,0,.07)">
+      <div class="filter-group">
+        <div class="filter-label">Filter by program <span style="font-size:10px;color:#9ca3af;font-weight:400;text-transform:none;letter-spacing:0">(hover for definition)</span></div>
+        <div class="prog-row" id="progRow" style="margin-bottom:0"></div>
+      </div>
+      <div class="filter-group" style="max-width:320px">
+        <div class="filter-label">Filter by document</div>
+        <select class="filter-select" id="docFilter" onchange="selectDoc(this.value)">
+          <option value="All">All documents</option>
+        </select>
+      </div>
+      <button class="filter-reset" onclick="resetFilters()">Reset filters</button>
+    </div>
+  </div>
+
+  <div style="height:16px"></div>
+
+  <!-- HORIZONTAL BAR CHART: Gaps by Document -->
+  <div class="chart-card" style="margin-bottom:24px">
+    <div class="chart-card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <div>
+        <span class="chart-card-title">Total Gaps by Document</span>
+        <span style="font-size:11px;color:#9ca3af;margin-left:10px">hover for details</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;font-size:11px;font-weight:600;color:#6b7280">
+        <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#E24B4A"></span>High</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#EF9F27"></span>Medium</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#4ade80"></span>No Gaps</span>
+      </div>
+    </div>
+    <div class="chart-card-body" style="padding:20px 24px;background:#f0fdf4;border-radius:0 0 10px 10px" id="hBarContainer"></div>
+    <div id="hBarTooltip" style="display:none;position:fixed;background:#1F4E79;color:#fff;font-size:11px;font-weight:600;padding:7px 12px;border-radius:6px;pointer-events:none;z-index:9999;line-height:1.8;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2)"></div>
+  </div>
+
+  <!-- HISTORY SECTION -->
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:20px">
+    <div style="padding:14px 18px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#1a1a1a">&#128202; Run History</div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:2px">Each time v8 script runs and pushes to source, a new entry is recorded here</div>
+      </div>
+      <button onclick="clearRunHistory()"
+        style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:1.5px solid #fca5a5;background:#fff5f5;color:#dc2626;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;transition:all .15s;white-space:nowrap"
+        onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fff5f5'">
+        &#128465; Clear History
+      </button>
+      <button id="historyToggleBtn" onclick="toggleHistory()"
+        style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:1.5px solid #d1d5db;background:#f8fafc;color:#374151;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;transition:all .15s">
+        <span id="historyToggleIcon">&#9650;</span> Hide
+      </button>
+    </div>
+    <div id="historySection"></div>
+  </div>
+
+  <!-- GAPS TABLE -->
+  <div class="gap-section">
+    <div class="gap-top">
+      <div><span class="gap-title">Compliance Gaps</span><span class="gap-count" id="gapCount"></span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="gapsToggleBtn" onclick="toggleGaps()"
+          style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:1.5px solid #d1d5db;background:#f8fafc;color:#374151;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif">
+          <span>&#9650;</span> Hide
+        </button>
+        <button class="export-btn" id="exportBtn" onclick="exportExcel()">
+          <i class="ti ti-download"></i> Export to Excel
+        </button>
+      </div>
+    </div>
+    <div id="gapsBody_wrap" class="gap-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:22%">Document</th>
+          <th style="width:10%">Program</th>
+          <th style="width:10%">Severity</th>
+          <th style="width:18%">Gap</th>
+          <th style="width:40%">Resolution</th>
+        </tr></thead>
+        <tbody id="gapBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<script>
+const BUILD_VERSION = '2026.06.17-v8-source';
+console.log('CATCH Dashboard build:', BUILD_VERSION);
+
+// ══ CONSTANTS ════════════════════════════════════════════════════════════════
+const EXCEL_URL      = 'https://raw.githubusercontent.com/cmcdatasolutions/catch-dashboard/main/CATCH_Compliance_Dashboard.xlsx';
+const ACCESS_JSON_URL= 'https://raw.githubusercontent.com/cmcdatasolutions/catch-dashboard/main/catch_dashboard_access.json';
+const ACCESS_JSON_API= 'https://api.github.com/repos/cmcdatasolutions/catch-dashboard/contents/catch_dashboard_access.json';
+const GITHUB_API_URL = ACCESS_JSON_API;
+
+const PROG_DEFS = {
+  "All":              "Show all documents regardless of program coverage.",
+  "GUIDE":            "Guiding an Informed Dementia Experience: CMS Innovation model supporting comprehensive dementia care.",
+  "CHI/PIN":          "Community Health Integration / Principal Illness Navigation: CMS programs for community health workers and patient navigation.",
+  "DPP":              "Diabetes Prevention Program: Evidence-based program to prevent type 2 diabetes.",
+  "Care Transitions": "Care Transitions: Structured intervention supporting patients moving between care settings."
+};
+
+// ══ STATE ════════════════════════════════════════════════════════════════════
+let currentUser  = null;
+let selectedProg = 'All';
+let selectedDoc  = 'All';
+
+// Data loaded from v8 Excel
+let dashRecords  = []; // from "Compliance Dashboard" sheet
+let gapsRecords  = []; // from "Compliance Gaps" sheet
+let historyRuns  = []; // from "History" sheet
+
+// ══ EMBEDDED USERS ═══════════════════════════════════════════════════════════
+let EMBEDDED_USERS = [
+  { RowCount:1, FirstName:'Janice',  LastName:'Sparks', EmailAddress:'janice.sparks@catchgh.org',             Program:'ALL',   Role:'admin' },
+  { RowCount:2, FirstName:'Brandi',  LastName:'Smith',  EmailAddress:'brandi.smith@houstontx.gov',            Program:'ALL',   Role:'admin' },
+  { RowCount:3, FirstName:'Michael', LastName:'Creary', EmailAddress:'creary.michael@digitaldataexperts.net', Program:'GUIDE', Role:'user'  },
+  { RowCount:4, FirstName:'Janice',  LastName:'Creary', EmailAddress:'support@digitaldataexperts.net',        Program:'ALL',   Role:'admin' },
+];
+
+// ══ ACCESS LIST ══════════════════════════════════════════════════════════════
+async function fetchAccessList() {
+  try {
+    const r = await fetch(ACCESS_JSON_URL + '?t=' + Date.now(), {cache:'no-store'});
+    if (r.ok) { const rows = await r.json(); EMBEDDED_USERS = rows; return rows; }
+  } catch(_) {}
+  try {
+    const token = getGithubToken();
+    if (token) {
+      const r = await fetch(ACCESS_JSON_API, {headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}});
+      if (r.ok) { const d = await r.json(); const rows = JSON.parse(atob(d.content.replace(/\n/g,''))); EMBEDDED_USERS = rows; return rows; }
+    }
+  } catch(_) {}
+  return EMBEDDED_USERS;
+}
+
+// ══ LOGIN ════════════════════════════════════════════════════════════════════
+async function doLogin() {
+  const email  = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const errEl  = document.getElementById('loginError');
+  const btn    = document.getElementById('loginBtn');
+  const loadEl = document.getElementById('loginLoading');
+  errEl.style.display = 'none';
+  if (!email) { showLoginError('Please enter your email address.'); return; }
+  btn.disabled = true; loadEl.style.display = 'block';
+  try {
+    const rows = await fetchAccessList();
+    const user = rows.find(r => String(r.EmailAddress||'').trim().toLowerCase() === email);
+    btn.disabled = false; loadEl.style.display = 'none';
+    if (!user) { showLoginError('Access denied. Contact your administrator.'); return; }
+    completeLogin(user);
+  } catch(err) {
+    btn.disabled = false; loadEl.style.display = 'none';
+    showLoginError('Login error: ' + err.message);
+  }
+}
+
+function completeLogin(user) {
+  currentUser = {
+    firstName: user.FirstName || '',
+    lastName:  user.LastName  || '',
+    email:     String(user.EmailAddress||'').trim().toLowerCase(),
+    program:   String(user.Program||'ALL').trim().toUpperCase(),
+    role:      String(user.Role||'user').trim().toLowerCase()
+  };
+  selectedProg = (currentUser.program === 'ALL') ? 'All' : currentUser.program;
+  document.getElementById('loginOverlay').style.display = 'none';
+  updateUserBadge(currentUser);
+  autoLoadExcel();
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg; el.style.display = 'block';
+  document.getElementById('loginLoading').style.display = 'none';
+}
+
+function updateUserBadge(user) {
+  const el = document.getElementById('userBadge');
+  if (!el) return;
+  const isAdmin = (user.role === 'admin');
+  el.innerHTML = `
+    <span>&#128100;</span>
+    <strong>${user.firstName} ${user.lastName}</strong>
+    <span style="color:rgba(255,255,255,.6)">${user.email}</span>
+    <span style="background:rgba(255,255,255,.2);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700">${user.program}</span>
+    ${isAdmin?`<button class="logout-btn" onclick="openAdmin()" style="background:rgba(255,204,0,.25);border-color:rgba(255,204,0,.4)">&#9881; Admin</button>`:''}
+    <button class="logout-btn" onclick="doLogout()">Sign Out</button>`;
+}
+
+function doLogout() {
+  currentUser = null; selectedProg = 'All'; selectedDoc = 'All';
+  dashRecords=[]; gapsRecords=[]; historyRuns=[];
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginError').style.display = 'none';
+  document.getElementById('loginBtn').disabled = false;
+  document.getElementById('loginOverlay').style.display = 'flex';
+}
+
+// ══ LOAD EXCEL FROM GITHUB ═══════════════════════════════════════════════════
+// Reads the Excel produced by v8 Python script.
+// Sheet names: "Compliance Dashboard" | "Compliance Gaps" | "History"
+async function autoLoadExcel() {
+  const statusEl = document.getElementById('uploadStatus');
+  statusEl.className = 'upload-status idle';
+  statusEl.textContent = '⏳ Loading from Source…';
+  try {
+    const resp = await fetch(EXCEL_URL + '?nocache=' + Date.now());
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const buf = await resp.arrayBuffer();
+    processWorkbook(buf, 'Source (v8 auto-load)');
+  } catch(e) {
+    statusEl.className = 'upload-status err';
+    statusEl.textContent = '✗ Could not load from Source — upload a local file to continue';
+    renderAll();
+  }
+}
+
+
+// ══ PROCESS WORKBOOK — reads v8 sheet names ═══════════════════════════════════
+// v8 Excel layout: each sheet has a TITLE row (row 1), then HEADER row (row 2), then data.
+// SheetJS sheet_to_json with {header:1} reads raw arrays so we skip row 0 (title)
+// and use row 1 as column headers manually.
+function sheetToObjects(ws) {
+  if (!ws) return [];
+  const raw = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+  // row 0 = title (e.g. "CATCH Compliance Dashboard"), row 1 = headers, row 2+ = data
+  if (raw.length < 2) return [];
+  const headers = raw[1].map(h => String(h).trim());
+  return raw.slice(2)
+    .filter(r => r.some(v => v !== ''))
+    .map(r => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = r[i] !== undefined ? r[i] : ''; });
+      return obj;
+    });
+}
+
+function processWorkbook(arrayBuffer, sourceName) {
+  const statusEl = document.getElementById('uploadStatus');
+  try {
+    const wb = XLSX.read(arrayBuffer, {type:'array'});
+
+    // ── Sheet 1: Compliance Dashboard ────────────────────────────────────────
+    const sh1 = wb.Sheets['Compliance Dashboard'];
+    if (!sh1) throw new Error('"Compliance Dashboard" sheet not found in Excel.');
+    const raw1 = sheetToObjects(sh1);
+
+    dashRecords = raw1
+      .filter(r => r['#'] !== '' && !isNaN(Number(r['#'])))
+      .map(r => ({
+        num:     Number(r['#']),
+        docName: String(r['Document Name']     || '').trim(),
+        program: String(r['Program']           || '').trim(),
+        vendor:  String(r['Vendor/Party']      || '').trim(),
+        effDate: String(r['Effective Date']    || '').trim(),
+        endDate: String(r['Contract End Date'] || '').trim(),
+        scope:   String(r['Scope of Work']     || '').trim(),
+        sigs:    String(r['Signatures']        || '').trim(),
+        ins:     String(r['Insurance Clause']  || '').trim(),
+        conf:    String(r['Confidentiality']   || '').trim(),
+        hipaa:   String(r['HIPAA/DUA']         || '').trim(),
+        term:    String(r['Termination Clause']|| '').trim(),
+        status:  String(r['Compliance Status'] || '').trim(),
+        issues:  String(r['Issues Found']      || '').trim(),
+      }));
+
+    // ── Sheet 2: Compliance Gaps ──────────────────────────────────────────────
+    const sh2 = wb.Sheets['Compliance Gaps'];
+    if (sh2) {
+      const raw2 = sheetToObjects(sh2);
+      gapsRecords = raw2
+        .filter(r => r['#'] !== '' && !isNaN(Number(r['#'])))
+        .map(r => ({
+          num:        Number(r['#']),
+          docName:    String(r['Document Name'] || '').trim(),
+          program:    String(r['Program']       || '').trim(),
+          gap:        String(r['Gap Category']  || '').trim(),
+          severity:   String(r['Severity']      || '').trim(),
+          resolution: String(r['Resolution']    || '').trim(),
+        }));
+    } else {
+      gapsRecords = [];
+    }
+
+    // ── Sheet 3: History ─────────────────────────────────────────────────────
+    const sh3 = wb.Sheets['History'];
+    if (sh3) {
+      const raw3 = sheetToObjects(sh3);
+      historyRuns = raw3
+        .filter(r => r['Run #'] !== '' && !isNaN(Number(r['Run #'])))
+        .map(r => ({
+          run:    Number(r['Run #']),
+          ts:     String(r['Date & Time']       || '').trim(),
+          total:  Number(r['Documents Found']   || 0),
+          comp:   Number(r['Compliant']         || 0),
+          review: Number(r['Review Needed']     || 0),
+          notes:  String(r['Notes']             || '').trim(),
+        }));
+    } else {
+      historyRuns = [];
+    }
+
+    // Rebuild doc filter dropdown
+    const sel = document.getElementById('docFilter');
+    while (sel.options.length > 1) sel.remove(1);
+    dashRecords.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.docName;
+      opt.textContent = r.docName.length > 55 ? r.docName.substring(0,53)+'…' : r.docName;
+      sel.appendChild(opt);
+    });
+
+    selectedDoc = 'All';
+    renderAll();
+
+    statusEl.className = 'upload-status ok';
+    statusEl.textContent = `✓ Loaded: ${sourceName} (${dashRecords.length} docs · ${gapsRecords.length} gaps)`;
+
+  } catch(err) {
+    statusEl.className = 'upload-status err';
+    statusEl.textContent = '✗ ' + err.message;
+    console.error('processWorkbook error:', err);
+  }
+}
+
+// ══ FILTERING ════════════════════════════════════════════════════════════════
+function effectiveProg() {
+  if (!currentUser || currentUser.program === 'ALL') return selectedProg;
+  return currentUser.program; // restricted user always sees only their program
+}
+
+function filteredDash() {
+  const ep = effectiveProg();
+  return dashRecords.filter(r => {
+    if (ep !== 'All' && !r.program.toUpperCase().includes(ep.toUpperCase())) return false;
+    if (selectedDoc !== 'All' && r.docName !== selectedDoc) return false;
+    return true;
+  });
+}
+
+function filteredGaps() {
+  const ep = effectiveProg();
+  return gapsRecords.filter(r => {
+    if (ep !== 'All' && !r.program.toUpperCase().includes(ep.toUpperCase())) return false;
+    if (selectedDoc !== 'All' && r.docName !== selectedDoc) return false;
+    return true;
+  });
+}
+
+function selectProg(p) { selectedProg = p; selectedDoc = 'All'; document.getElementById('docFilter').value = 'All'; renderAll(); }
+function selectDoc(d)  { selectedDoc  = d; renderAll(); }
+function resetFilters() {
+  selectedProg = (currentUser && currentUser.program !== 'ALL') ? currentUser.program : 'All';
+  selectedDoc  = 'All';
+  document.getElementById('docFilter').value = 'All';
+  renderAll();
+}
+
+// ══ RENDER ═══════════════════════════════════════════════════════════════════
+let historyVisible = true;
+function toggleHistory() {
+  const section = document.getElementById('historySection');
+  const btn     = document.getElementById('historyToggleBtn');
+  historyVisible = !historyVisible;
+  section.style.display = historyVisible ? 'block' : 'none';
+  btn.innerHTML = `<span>${historyVisible?'&#9650;':'&#9660;'}</span> ${historyVisible?'Hide':'Show'}`;
+}
+
+function clearRunHistory() {
+  if (!historyRuns.length) { alert('No history to clear.'); return; }
+  if (!confirm(`Clear all ${historyRuns.length} run history entries? This cannot be undone.`)) return;
+  historyRuns = [];
+  renderHistory();
+}
+
+let gapsVisible = true;
+function toggleGaps() {
+  const wrap = document.getElementById('gapsBody_wrap');
+  const btn  = document.getElementById('gapsToggleBtn');
+  gapsVisible = !gapsVisible;
+  wrap.style.display = gapsVisible ? 'block' : 'none';
+  btn.innerHTML = `<span>${gapsVisible?'&#9650;':'&#9660;'}</span> ${gapsVisible?'Hide':'Show'}`;
+}
+
+function renderAll() { renderKPIs(); renderPrograms(); renderHBarChart(); renderHistory(); renderGaps(); }
+
+window.addEventListener('resize', () => { if (dashRecords.length) renderHBarChart(); });
+
+function renderKPIs() {
+  const fd = filteredDash(), fg = filteredGaps();
+  const comp   = fd.filter(r => r.status.includes('Compliant') && !r.status.includes('Review')).length;
+  const review = fd.length - comp;
+  const high   = fg.filter(r => r.severity === 'High').length;
+  const med    = fg.filter(r => r.severity === 'Medium').length;
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi kpi-navy"><div class="kpi-label">Documents</div><div class="kpi-value">${fd.length}</div></div>
+    <div class="kpi kpi-green"><div class="kpi-label">&#10004; Compliant</div><div class="kpi-value">${comp}</div></div>
+    <div class="kpi kpi-amber"><div class="kpi-label">&#9888; Review Needed</div><div class="kpi-value">${review}</div></div>
+    <div class="kpi kpi-red"><div class="kpi-label">High Severity Gaps</div><div class="kpi-value">${high}</div></div>
+    <div class="kpi kpi-blue"><div class="kpi-label">Total Gaps</div><div class="kpi-value">${fg.length}</div></div>`;
+}
+
+function renderPrograms() {
+  const allProgs = ['All','GUIDE','CHI/PIN','DPP','Care Transitions'];
+  const allowed  = (!currentUser || currentUser.program === 'ALL') ? allProgs : [currentUser.program];
+  const ep = effectiveProg();
+  document.getElementById('progRow').innerHTML = allowed.map(p => `
+    <div class="prog-chip ${ep===p?'active':''}" onclick="${(!currentUser||currentUser.program==='ALL')?`selectProg('${p}')`:''}">
+      ${p}<div class="tooltip-box">${PROG_DEFS[p]||p}</div>
+    </div>`).join('');
+}
+
+function shortName(n) { return n.length <= 38 ? n : n.substring(0,36)+'…'; }
+
+function renderDefectBars() { renderHBarChart(); }
+function renderPctBars()    { /* handled by renderHBarChart */ }
+
+function renderHBarChart() {
+  const fd        = filteredDash();
+  const container = document.getElementById('hBarContainer');
+  const tooltip   = document.getElementById('hBarTooltip');
+  if (!fd.length || !container) return;
+
+  const TOTAL_FIELDS = 8;
+  const BAR_H        = 28;  // bar height px
+  const ROW_GAP      = 10;  // gap between rows
+  const NAME_W       = 280; // fixed width for document name column
+  const VAL_W        = 36;  // width for count label after bar
+
+  // Build data
+  const data = fd.map(r => {
+    const docGaps = gapsRecords.filter(g => g.docName === r.docName);
+    const high    = docGaps.filter(g => g.severity === 'High').length;
+    const med     = docGaps.filter(g => g.severity === 'Medium').length;
+    const total   = high + med;
+    return { name: r.docName.replace(/\.(pdf|docx)$/i, ''), full: r.docName, program: r.program, high, med, total };
+  });
+
+  const maxVal  = Math.max(...data.map(d => d.total), 1);
+  const n       = data.length;
+  const svgH    = n * (BAR_H + ROW_GAP) + 8;
+
+  // Bar area width = 100% - NAME_W - VAL_W (computed at render time via JS, not SVG %)
+  const containerW = container.clientWidth || 900;
+  const BAR_W      = Math.max(containerW - NAME_W - VAL_W - 8, 200);
+
+  const rows = data.map((d, i) => {
+    const y         = i * (BAR_H + ROW_GAP);
+    const cy        = y + BAR_H / 2;
+    const totalPx   = (d.total / maxVal) * BAR_W;
+    const highPx    = (d.high  / maxVal) * BAR_W;
+    const medPx     = Math.max(0, totalPx - highPx);
+    const isOk      = d.total === 0;
+
+    // Stacked bar segments
+    const barHtml = isOk
+      ? `<rect x="0" y="${y}" width="${BAR_W}" height="${BAR_H}" rx="5" fill="#f0fdf4"/>
+         <text x="8" y="${cy+4}" font-size="11" font-weight="700" fill="#16a34a">✔ No gaps</text>`
+      : `<rect x="0" y="${y}" width="${BAR_W}" height="${BAR_H}" rx="5" fill="#f8fafc"/>
+         <rect x="0" y="${y}" width="${highPx}" height="${BAR_H}" rx="5" fill="#E24B4A"/>
+         <rect x="${highPx}" y="${y}" width="${medPx}" height="${BAR_H}" rx="${medPx > 6 ? 5 : 0}" fill="#EF9F27"/>
+         ${totalPx > 30 && d.high > 0 ? `<text x="${highPx/2}" y="${cy+4}" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">${d.high}</text>` : ''}
+         ${totalPx > 30 && d.med > 0  ? `<text x="${highPx + medPx/2}" y="${cy+4}" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">${d.med}</text>` : ''}`;
+
+    // Invisible hover target covering full row
+    const hoverRect = `<rect x="0" y="${y}" width="${BAR_W}" height="${BAR_H}" rx="5" fill="transparent" style="cursor:pointer"
+      data-name="${d.full}" data-prog="${d.program}" data-total="${d.total}" data-high="${d.high}" data-med="${d.med}"
+      class="hbar-hover"/>`;
+
+    return { y, cy, barHtml, hoverRect, d };
+  });
+
+  // ── Build SVG ──────────────────────────────────────────────────────────────
+  const svgBars = `<svg width="${BAR_W}" height="${svgH}" style="display:block;overflow:visible">
+    ${rows.map(r => r.barHtml).join('')}
+    ${rows.map(r => r.hoverRect).join('')}
+  </svg>`;
+
+  // ── Build name column ──────────────────────────────────────────────────────
+  const svgNames = `<svg width="${NAME_W}" height="${svgH}" style="display:block;overflow:visible">
+    ${rows.map(({y, cy, d}) => {
+      const name    = d.name.length > 38 ? d.name.substring(0, 36) + '…' : d.name;
+      const progClr = '#1e40af';
+      const progBg  = '#DBEAFE';
+      return `
+        <text x="${NAME_W - 10}" y="${cy - 5}" text-anchor="end" font-size="11" font-weight="600" fill="#374151">${name}</text>
+        <text x="${NAME_W - 10}" y="${cy + 9}" text-anchor="end" font-size="9.5" fill="#6b7280">${d.program}</text>`;
+    }).join('')}
+  </svg>`;
+
+  // ── Build value column ──────────────────────────────────────────────────────
+  const svgVals = `<svg width="${VAL_W}" height="${svgH}" style="display:block;overflow:visible">
+    ${rows.map(({y, cy, d}) => {
+      const color = d.total === 0 ? '#16a34a' : d.high > 0 ? '#E24B4A' : '#EF9F27';
+      return d.total > 0
+        ? `<text x="6" y="${cy+4}" font-size="11" font-weight="700" fill="${color}">${d.total}</text>`
+        : '';
+    }).join('')}
+  </svg>`;
+
+  container.innerHTML = `
+    <div style="display:flex;align-items:flex-start;gap:0;width:100%">
+      <div style="flex-shrink:0">${svgNames}</div>
+      <div style="flex:1;min-width:0">${svgBars}</div>
+      <div style="flex-shrink:0">${svgVals}</div>
+    </div>`;
+
+  // ── Tooltip ────────────────────────────────────────────────────────────────
+  container.querySelectorAll('.hbar-hover').forEach(el => {
+    el.addEventListener('mouseenter', e => {
+      const d = e.target.dataset;
+      tooltip.innerHTML =
+        `<div style="font-weight:700;margin-bottom:3px">${d.name}</div>
+         <div>Program: <span style="color:#93c5fd">${d.prog}</span></div>
+         <div>Total gaps: <span style="color:#fbbf24">${d.total}</span></div>
+         <div>High: <span style="color:#fca5a5">${d.high}</span> &nbsp;·&nbsp; Medium: <span style="color:#fcd34d">${d.med}</span></div>`;
+      tooltip.style.display = 'block';
+    });
+    el.addEventListener('mousemove', e => {
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top  = (e.clientY - 10) + 'px';
+    });
+    el.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+  });
+}
+
+
+function renderHistory() {
+  const container = document.getElementById('historySection');
+  if (!historyRuns.length) {
+    container.innerHTML = '<div class="empty" style="padding:24px">&#128202; No history yet — run the v8 script to generate history entries.</div>';
+    return;
+  }
+  const sorted = [...historyRuns].sort((a,b) => b.run - a.run);
+
+  // Summary totals for footer
+  const totalRuns   = sorted.length;
+  const avgComp     = Math.round(sorted.reduce((s,r) => s + (r.total ? r.comp/r.total*100 : 0), 0) / totalRuns);
+  const bestRun     = sorted.reduce((best, r) => (r.comp > best.comp ? r : best), sorted[0]);
+
+  const TH = (label, align='center', extra='') =>
+    `<th style="padding:11px 14px;text-align:${align};color:#fff;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;border-right:1px solid #2E75B6;white-space:nowrap;background:#163d61;${extra}">${label}</th>`;
+
+  container.innerHTML = `
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead>
+        <!-- Column group label row -->
+        <tr style="background:#163d61">
+          <td colspan="2" style="padding:6px 14px;color:#fff;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border-right:1px solid #2E75B6">Run Info</td>
+          <td colspan="4" style="padding:6px 14px;color:#fff;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;text-align:center;border-right:1px solid #2E75B6">Compliance Metrics</td>
+          <td style="padding:6px 14px;color:#fff;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase">Details</td>
+        </tr>
+        <!-- Main header row -->
+        <tr style="background:#163d61">
+          ${TH('Run #','center','width:60px')}
+          ${TH('Date &amp; Time','left','min-width:160px')}
+          ${TH('Docs','center','width:60px')}
+          ${TH('&#10004; Compliant','center','width:100px')}
+          ${TH('&#9888; Review','center','width:90px')}
+          ${TH('Rate','center','width:70px')}
+          <th style="padding:11px 14px;text-align:left;color:#fff;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${sorted.map((r, i) => {
+          const rate    = r.total ? Math.round((r.comp / r.total) * 100) : 0;
+          const rateClr = rate >= 80 ? '#166534' : rate >= 50 ? '#92400e' : '#991b1b';
+          const rateBg  = rate >= 80 ? '#dcfce7' : rate >= 50 ? '#fef3c7' : '#fee2e2';
+          const bg      = i % 2 === 0 ? '#f8fafc' : '#ffffff';
+          const isLatest = i === 0;
+          return `<tr style="background:${bg};border-bottom:1px solid #e5e7eb${isLatest ? ';outline:2px solid #185FA5;outline-offset:-2px' : ''}">
+            <td style="padding:9px 14px;text-align:center;font-weight:700;color:#1F4E79;border-right:1px solid #f1f5f9">
+              ${r.run}${isLatest ? ' <span style="background:#185FA5;color:#fff;font-size:9px;padding:1px 5px;border-radius:4px;font-weight:700;vertical-align:middle">LATEST</span>' : ''}
+            </td>
+            <td style="padding:9px 14px;color:#374151;border-right:1px solid #f1f5f9;white-space:nowrap">${r.ts}</td>
+            <td style="padding:9px 14px;text-align:center;font-weight:600;color:#374151;border-right:1px solid #f1f5f9">${r.total}</td>
+            <td style="padding:9px 14px;text-align:center;border-right:1px solid #f1f5f9">
+              <span style="background:#dcfce7;color:#166534;padding:2px 10px;border-radius:10px;font-weight:700;font-size:11px">${r.comp}</span>
+            </td>
+            <td style="padding:9px 14px;text-align:center;border-right:1px solid #f1f5f9">
+              <span style="background:${r.review > 0 ? '#fef3c7' : '#dcfce7'};color:${r.review > 0 ? '#92400e' : '#166534'};padding:2px 10px;border-radius:10px;font-weight:700;font-size:11px">${r.review}</span>
+            </td>
+            <td style="padding:9px 14px;text-align:center;border-right:1px solid #f1f5f9">
+              <span style="background:${rateBg};color:${rateClr};padding:2px 10px;border-radius:10px;font-weight:700;font-size:11px">${rate}%</span>
+            </td>
+            <td style="padding:9px 14px;color:#6b7280;font-size:11px">${r.notes||'—'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+      <!-- Summary footer -->
+      <tfoot>
+        <tr style="background:#f0f9ff;border-top:2px solid #185FA5">
+          <td colspan="2" style="padding:9px 14px;font-size:11px;font-weight:700;color:#1F4E79;border-right:1px solid #e2e8f0">
+            &#128202; ${totalRuns} run${totalRuns!==1?'s':''} recorded
+          </td>
+          <td style="padding:9px 14px;text-align:center;font-size:11px;font-weight:700;color:#374151;border-right:1px solid #e2e8f0">${sorted[0]?.total||0}</td>
+          <td colspan="2" style="padding:9px 14px;text-align:center;font-size:11px;font-weight:600;color:#374151;border-right:1px solid #e2e8f0">
+            Avg rate: <span style="color:#185FA5;font-weight:700">${avgComp}%</span>
+          </td>
+          <td style="padding:9px 14px;text-align:center;border-right:1px solid #e2e8f0">
+            <span style="background:${avgComp>=80?'#dcfce7':avgComp>=50?'#fef3c7':'#fee2e2'};color:${avgComp>=80?'#166534':avgComp>=50?'#92400e':'#991b1b'};padding:2px 10px;border-radius:10px;font-weight:700;font-size:11px">${avgComp}%</span>
+          </td>
+          <td style="padding:9px 14px;font-size:11px;color:#6b7280">Best run: #${bestRun.run} (${bestRun.total ? Math.round(bestRun.comp/bestRun.total*100) : 0}% compliant)</td>
+        </tr>
+      </tfoot>
+    </table>
+    </div>`;
+}
+
+function renderGaps() {
+  const fg = filteredGaps();
+  document.getElementById('gapCount').textContent = `(${fg.length} items)`;
+  if (!fg.length) {
+    document.getElementById('gapBody').innerHTML = `<tr><td colspan="5" class="empty">&#10004; No gaps found for this selection.</td></tr>`;
+    return;
+  }
+  document.getElementById('gapBody').innerHTML = fg.map(g => {
+    const cls = g.severity === 'High' ? 'crit' : g.severity === 'Medium' ? 'high' : 'med';
+    return `<tr>
+      <td style="font-size:11px;max-width:200px;word-break:break-word">${g.docName}</td>
+      <td><span class="badge" style="background:#DBEAFE;color:#1e40af">${g.program}</span></td>
+      <td><span class="badge badge-${cls}">${g.severity}</span></td>
+      <td style="font-size:11px;font-weight:600">${g.gap}</td>
+      <td style="font-size:11px;color:#374151;line-height:1.5">${g.resolution}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ══ ADMIN PANEL ══════════════════════════════════════════════════════════════
+function getGithubToken()  { return sessionStorage.getItem('catch_gh_token') || ''; }
+function setGithubToken(t) { sessionStorage.setItem('catch_gh_token', t.replace(/[\s\u00a0\u200b\ufeff]/g,'')); }
+function clearGithubToken(){ sessionStorage.removeItem('catch_gh_token'); }
+
+let adminUsers = [];
+
+function openAdmin() {
+  if (!currentUser || currentUser.role !== 'admin') return;
+  document.getElementById('adminOverlay').classList.add('open');
+  const stored = getGithubToken();
+  const statusEl = document.getElementById('tokenStatus');
+  if (statusEl) statusEl.textContent = stored ? '✔ Token set (' + stored.substring(0,8) + '...)' : '— not set';
+  document.getElementById('tokenInput').value = '';
+  loadAdminUsers();
+}
+function closeAdmin() { document.getElementById('adminOverlay').classList.remove('open'); }
+
+function saveToken() {
+  const val = document.getElementById('tokenInput').value.trim();
+  if (!val) { showAdminStatus('Enter a token first.', 'err'); return; }
+  setGithubToken(val);
+  document.getElementById('tokenInput').value = '';
+  const el = document.getElementById('tokenStatus');
+  if (el) el.textContent = '✔ Token set (' + val.substring(0,8) + '...)';
+  showAdminStatus('&#10003; Token saved for this session.', 'ok');
+}
+function clearToken() {
+  clearGithubToken();
+  document.getElementById('tokenInput').value = '';
+  const el = document.getElementById('tokenStatus');
+  if (el) el.textContent = '— not set';
+  showAdminStatus('Token cleared.', 'ok');
+}
+
+async function loadAdminUsers() {
+  try { adminUsers = await fetchAccessList(); renderAdminTable(); }
+  catch(e) { adminUsers = [...EMBEDDED_USERS]; renderAdminTable(); }
+}
+
+function renderAdminTable() {
+  document.getElementById('adminUserTable').innerHTML = adminUsers.map((u,i) => `
+    <tr>
+      <td style="color:#9ca3af;font-size:11px">${u.RowCount||i+1}</td>
+      <td style="font-weight:600">${u.FirstName||''} ${u.LastName||''}</td>
+      <td style="font-size:12px;color:#374151">${u.EmailAddress||''}</td>
+      <td><select class="prog-select" onchange="updateField(${i},'Program',this.value)">
+        ${['ALL','GUIDE','Care Transitions','CHI/PIN','DPP'].map(p=>`<option value="${p}" ${(u.Program||'ALL')===p?'selected':''}>${p}</option>`).join('')}
+      </select></td>
+      <td><select class="prog-select" onchange="updateField(${i},'Role',this.value)">
+        <option value="user"  ${(u.Role||'user')==='user' ?'selected':''}>User</option>
+        <option value="admin" ${(u.Role||'user')==='admin'?'selected':''}>Admin</option>
+      </select></td>
+      <td><button class="del-btn" onclick="deleteUser(${i})">&#128465; Remove</button></td>
+    </tr>`).join('');
+}
+
+function updateField(idx, field, val) {
+  adminUsers[idx][field] = val;
+  showAdminStatus(`&#10003; ${field} changed — click Save Changes to apply.`, 'ok');
+}
+
+function deleteUser(idx) {
+  const u = adminUsers[idx];
+  if (!confirm(`Remove ${u.FirstName} ${u.LastName}?`)) return;
+  adminUsers.splice(idx,1);
+  adminUsers.forEach((u,i) => u.RowCount = i+1);
+  renderAdminTable();
+  showAdminStatus('User removed — click Save Changes to apply.', 'ok');
+}
+
+function addUser() {
+  const fn  = document.getElementById('newFirstName').value.trim();
+  const ln  = document.getElementById('newLastName').value.trim();
+  const em  = document.getElementById('newEmail').value.trim();
+  const prg = document.getElementById('newProgram').value;
+  const rol = document.getElementById('newRole').value;
+  if (!fn||!ln||!em) { showAdminStatus('Please fill in all fields.','err'); return; }
+  if (adminUsers.find(u=>u.EmailAddress.toLowerCase()===em.toLowerCase())) { showAdminStatus('Email already exists.','err'); return; }
+  adminUsers.push({RowCount:adminUsers.length+1,FirstName:fn,LastName:ln,EmailAddress:em,Program:prg,Role:rol});
+  renderAdminTable();
+  document.getElementById('newFirstName').value='';
+  document.getElementById('newLastName').value='';
+  document.getElementById('newEmail').value='';
+  showAdminStatus('User added — click Save Changes to apply.','ok');
+}
+
+async function saveToGitHub() {
+  const token = getGithubToken();
+  if (!token) { showAdminStatus('&#10007; Set your Source token first.','err'); return; }
+  const btn = document.getElementById('saveGithubBtn');
+  btn.disabled=true; btn.innerHTML='Saving...';
+  try {
+    const jsonStr = JSON.stringify(adminUsers,null,2);
+    const wbout   = btoa(unescape(encodeURIComponent(jsonStr)));
+    const getResp = await fetch(GITHUB_API_URL,{headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}});
+    let sha = null;
+    if (getResp.ok) { const d = await getResp.json(); sha = d.sha; }
+    const payload = {message:'Access list updated via Admin Panel — '+new Date().toLocaleString(),content:wbout};
+    if (sha) payload.sha = sha;
+    const putResp = await fetch(GITHUB_API_URL,{method:'PUT',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json','Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},body:JSON.stringify(payload)});
+    if (!putResp.ok) { const e=await putResp.json(); throw new Error(e.message||putResp.status); }
+    EMBEDDED_USERS = adminUsers;
+    showAdminStatus('&#10003; Saved to Source successfully!','ok');
+  } catch(e) {
+    showAdminStatus('&#10007; '+e.message,'err');
+  } finally {
+    btn.disabled=false; btn.innerHTML='&#128190; Save Changes';
+  }
+}
+
+async function refreshPermissions() {
+  showAdminStatus('Refreshing from Source…','ok');
+  const token = getGithubToken();
+  try {
+    let rows;
+    if (token) {
+      const r = await fetch(ACCESS_JSON_API,{headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}});
+      if (!r.ok) { const e=await r.json(); throw new Error(e.message||r.status); }
+      const d = await r.json();
+      rows = JSON.parse(atob(d.content.replace(/\n/g,'')));
+    } else {
+      const r = await fetch(ACCESS_JSON_URL+'?t='+Date.now(),{cache:'no-store'});
+      if (!r.ok) throw new Error('HTTP '+r.status);
+      rows = await r.json();
+    }
+    adminUsers = rows; EMBEDDED_USERS = rows;
+    renderAdminTable();
+    if (currentUser) {
+      const updated = rows.find(r=>String(r.EmailAddress||'').trim().toLowerCase()===currentUser.email);
+      if (updated) { currentUser.program=String(updated.Program||'ALL').trim().toUpperCase(); updateUserBadge(currentUser); }
+    }
+    showAdminStatus('&#10003; Permissions refreshed from Source.','ok');
+  } catch(e) { showAdminStatus('&#10007; '+e.message,'err'); }
+}
+
+function showAdminStatus(msg, type) {
+  const el = document.getElementById('adminStatus');
+  el.innerHTML = msg; el.className = 'admin-status '+type; el.style.display = 'block';
+}
+
+// ══ EXPORT ═══════════════════════════════════════════════════════════════════
+async function exportExcel() {
+  const btn = document.getElementById('exportBtn');
+  btn.disabled=true; btn.innerHTML='Generating...';
+  try {
+    const fg    = filteredGaps();
+    const label = effectiveProg() === 'All' ? 'All Programs' : effectiveProg();
+    const wb    = new ExcelJS.Workbook();
+    const ws    = wb.addWorksheet('Compliance Gaps');
+    ws.mergeCells('A1:E1');
+    const tc = ws.getCell('A1');
+    tc.value = `CATCH Greater Houston – Compliance Gaps (${label})`;
+    tc.font  = {name:'Arial',bold:true,size:13,color:{argb:'FFFFFFFF'}};
+    tc.fill  = {type:'pattern',pattern:'solid',fgColor:{argb:'FF1F4E79'}};
+    tc.alignment = {horizontal:'center',vertical:'middle'};
+    ws.getRow(1).height = 28;
+    const hr = ws.addRow(['Document Name','Program','Severity','Gap Category','Resolution']);
+    hr.eachCell(c=>{c.font={name:'Arial',bold:true,size:10,color:{argb:'FFFFFFFF'}};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1F4E79'}};c.alignment={horizontal:'center',vertical:'middle',wrapText:true};});
+    ws.getRow(2).height=25; ws.columns=[{width:45},{width:14},{width:12},{width:35},{width:70}];
+    fg.forEach((g,i)=>{
+      const row=ws.addRow([g.docName,g.program,g.severity,g.gap,g.resolution]); row.height=38;
+      const bg = i%2===0?'FFD6E4F0':'FFFFFFFF';
+      const sevFill = g.severity==='High'?'FFFCE4D6':g.severity==='Medium'?'FFFAEEDA':'FFEAF3DE';
+      row.eachCell((c,ci)=>{
+        c.alignment={vertical:'middle',wrapText:true};
+        c.border={bottom:{style:'thin',color:{argb:'FFBFBFBF'}}};
+        c.fill={type:'pattern',pattern:'solid',fgColor:{argb:ci===3?sevFill:bg}};
+        c.font={name:'Arial',size:10};
+      });
+    });
+    ws.views=[{state:'frozen',ySplit:2}];
+    const buf  = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href=url; a.download=`CATCH_Compliance_Gaps_${label.replace(/ /g,'_')}.xlsx`; a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) { alert('Export failed: '+e.message); }
+  btn.disabled=false; btn.innerHTML='<i class="ti ti-download"></i> Export to Excel';
+}
+</script>
+</body>
+</html>
