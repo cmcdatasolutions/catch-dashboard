@@ -22,5 +22,13 @@
     "EmailAddress": "creary.michael@digitaldataexperts.net",
     "Program": "GUIDE",
     "Role": "user"
+  },
+  {
+    "RowCount": 4,
+    "FirstName": "Camille",
+    "LastName": "Bailey",
+    "EmailAddress": "camille.bailey36@gmail.com",
+    "Program": "ALL",
+    "Role": "user"
   }
 ]
