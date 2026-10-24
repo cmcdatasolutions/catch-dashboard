@@ -592,12 +592,12 @@
       <span>Auto-loads from the GitHub tables (compliance_remediation/tables) on login.</span>
     </div>
 
-    <button class="upload-btn" onclick="autoLoadExcel()"><i class="ti ti-refresh"></i> Reload from Source</button>
-    <button class="upload-btn" id="runCheckBtn" onclick="runComplianceCheck()" disabled style="display:none;background:#2F6B3A"
-            title="Re-run the CATCH compliance script on source_docs/ and refresh these tables"><i class="ti ti-player-play"></i> Run Compliance Check</button>
     <button class="upload-btn" id="uploadDocBtn" onclick="document.getElementById('uploadDocInput').click()" disabled style="display:none;background:#6B4E16"
             title="Upload a Word (.docx) or PDF contract to source_docs/ on GitHub, then run the compliance check"><i class="ti ti-upload"></i> Upload Document</button>
     <input type="file" id="uploadDocInput" accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple style="display:none" onchange="uploadDocuments(this)">
+    <button class="upload-btn" onclick="autoLoadExcel()"><i class="ti ti-refresh"></i> Reload from Source</button>
+    <button class="upload-btn" id="runCheckBtn" onclick="runComplianceCheck()" disabled style="display:none;background:#2F6B3A"
+            title="Re-run the CATCH compliance script on source_docs/ and refresh these tables"><i class="ti ti-player-play"></i> Run Compliance Check</button>
     <span class="upload-status idle" id="uploadStatus">Loading from Source…</span>
     <span class="upload-status idle" id="runCheckStatus" style="display:none"></span>
   </div>
