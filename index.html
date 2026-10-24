@@ -2291,6 +2291,9 @@ async function remGhStatusClick() {
   }
 }
 
+// The token modal is declared inside the Remediation tab; move it to <body>
+// so it can open from any tab (e.g. the Compliance tab's Connect link).
+document.body.appendChild(document.getElementById('remGhModalOverlay'));
 document.getElementById('remGhConnectBtn').addEventListener('click', remGhStatusClick);
 document.getElementById('remGhStatus').addEventListener('click', remGhStatusClick);
 document.getElementById('remGhModalClose').addEventListener('click', remGhCloseModal);
