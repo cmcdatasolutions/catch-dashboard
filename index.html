@@ -420,6 +420,13 @@
 .viz-root .kpi-banner-sub { font-size: 13px; color: var(--text-secondary); margin: 0; position: relative; z-index: 1; max-width: 620px; }
 
 /* Three-column layout: bar chart | pie chart | bar chart */
+.viz-root .kpi-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 16px; padding: 12px 16px; background: var(--surface-1); border: 1px solid var(--grid); border-radius: 10px; }
+.viz-root .kpi-filter-label { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-secondary); margin-right: 4px; }
+.viz-root .kpi-chip { font: inherit; font-size: 13px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--baseline); background: #fff; color: var(--text-primary); cursor: pointer; }
+.viz-root .kpi-chip:hover { border-color: #1F4E79; }
+.viz-root .kpi-chip.on { background: #1F4E79; border-color: #1F4E79; color: #fff; font-weight: 600; }
+.viz-root .kpi-chip .n { opacity: .7; margin-left: 4px; font-size: 12px; }
+.viz-root .kpi-filter-note { margin-left: auto; font-size: 12px; color: var(--text-muted); }
 .viz-root .kpi-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: stretch; }
 .viz-root .kpi-card {
   background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px;
@@ -912,6 +919,12 @@
         <p class="kpi-banner-sub">Remediation Tracker — item status, cost distribution, and health at a glance</p>
       </div>
 
+      <div class="kpi-filter" id="kpiFilter" role="group" aria-label="Filter KPIs by category">
+        <span class="kpi-filter-label">Category</span>
+        <span id="kpiFilterChips" style="display:contents"></span>
+        <span class="kpi-filter-note" id="kpiFilterNote"></span>
+      </div>
+
       <div class="kpi-grid3">
 
         <div class="kpi-card bar-card">
@@ -945,7 +958,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 <script>
-const BUILD_VERSION = '2026.10.24-admin-edit';
+const BUILD_VERSION = '2026.10.24-kpi-filter';
 console.log('CATCH Dashboard build:', BUILD_VERSION);
 
 // ══ CONSTANTS ════════════════════════════════════════════════════════════════
@@ -2521,7 +2534,7 @@ remGhBoot();
 function kpiFmtCost(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
 
 function kpiComputeStats() {
-  const items = REM_ITEMS;
+  const items = kpiFilteredItems();
   const total = items.length;
   const completed = items.filter(i => i.status === 'Completed').length;
   const pending = items.filter(i => i.status === 'Pending').length;
@@ -2685,6 +2698,14 @@ function kpiRenderPieChart() {
   // stroke isn't clipped at the viewBox edge.
   const W = 240, H = 240, cx = 120, cy = 120, r = 117;
   const svg = kpiSvgEl('svg', { viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'xMidYMid meet' });
+  if (!totalCost) {
+    document.getElementById('kpiPieLegend').innerHTML = '';
+    document.getElementById('kpiPieChart').innerHTML =
+      '<div style="height:100%;min-height:200px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--text-muted);font-size:14px;padding:0 16px">No cost recorded for the selected categories ($0).</div>';
+    const subEl = document.getElementById('kpiPieSub');
+    if (subEl) subEl.textContent = 'Estimated cost by item status — $0 total';
+    return;
+  }
 
   let angle = 0;
   const legendHost = document.getElementById('kpiPieLegend');
@@ -2743,7 +2764,45 @@ function kpiEscapeHtml(str) {
   return div.innerHTML;
 }
 
+// ---------- Category filter (multi-select chips; none selected = All) ----------
+let kpiCatFilter = new Set();
+try { kpiCatFilter = new Set(JSON.parse(localStorage.getItem('catch_kpi_categories') || '[]')); } catch (e) {}
+function kpiSaveFilter() { try { localStorage.setItem('catch_kpi_categories', JSON.stringify([...kpiCatFilter])); } catch (e) {} }
+function kpiCategoryOf(it) { return it.category || 'Uncategorized'; }
+function kpiFilteredItems() {
+  return kpiCatFilter.size ? REM_ITEMS.filter(it => kpiCatFilter.has(kpiCategoryOf(it))) : REM_ITEMS;
+}
+function kpiRenderFilter() {
+  const counts = {};
+  REM_ITEMS.forEach(it => { const c = kpiCategoryOf(it); counts[c] = (counts[c] || 0) + 1; });
+  const cats = Object.keys(counts).sort();
+  for (const c of [...kpiCatFilter]) if (!counts[c]) kpiCatFilter.delete(c);   // category no longer exists
+  const host = document.getElementById('kpiFilterChips');
+  if (!host) return;
+  host.innerHTML = '';
+  const chip = (label, n, on, onClick) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'kpi-chip' + (on ? ' on' : '');
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.textContent = label;
+    const sp = document.createElement('span'); sp.className = 'n'; sp.textContent = n; b.appendChild(sp);
+    b.addEventListener('click', onClick);
+    host.appendChild(b);
+  };
+  chip('All', REM_ITEMS.length, kpiCatFilter.size === 0, () => { kpiCatFilter.clear(); kpiSaveFilter(); kpiRenderAll(); });
+  cats.forEach(c => chip(c, counts[c], kpiCatFilter.has(c), () => {
+    if (kpiCatFilter.has(c)) kpiCatFilter.delete(c); else kpiCatFilter.add(c);
+    if (kpiCatFilter.size === cats.length) kpiCatFilter.clear();     // everything picked = All
+    kpiSaveFilter(); kpiRenderAll();
+  }));
+  const shown = kpiFilteredItems().length;
+  document.getElementById('kpiFilterNote').textContent = kpiCatFilter.size
+    ? `Showing ${shown} of ${REM_ITEMS.length} items · ${[...kpiCatFilter].sort().join(', ')}`
+    : `Showing all ${REM_ITEMS.length} items · click categories to combine`;
+}
+
 function kpiRenderAll() {
+  kpiRenderFilter();
   kpiRenderBarChart();
   kpiRenderPieChart();
   kpiRenderCritChart();
