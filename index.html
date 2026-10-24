@@ -593,7 +593,10 @@
     </div>
 
     <button class="upload-btn" onclick="autoLoadExcel()"><i class="ti ti-refresh"></i> Reload from Source</button>
+    <button class="upload-btn" id="runCheckBtn" onclick="runComplianceCheck()" disabled style="display:none;background:#2F6B3A"
+            title="Re-run the CATCH compliance script on source_docs/ and refresh these tables"><i class="ti ti-player-play"></i> Run Compliance Check</button>
     <span class="upload-status idle" id="uploadStatus">Loading from Source…</span>
+    <span class="upload-status idle" id="runCheckStatus" style="display:none"></span>
   </div>
 
   <div class="sticky-top">
@@ -927,7 +930,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 <script>
-const BUILD_VERSION = '2026.10.24-github-tables';
+const BUILD_VERSION = '2026.10.24-run-check';
 console.log('CATCH Dashboard build:', BUILD_VERSION);
 
 // ══ CONSTANTS ════════════════════════════════════════════════════════════════
@@ -942,6 +945,7 @@ const TABLES = {
   gaps:      'tables/compliance_gaps.csv',
   history:   'tables/run_history.csv',
 };
+const CHECK_WORKFLOW = 'run-compliance.yml';   // .github/workflows in TABLES_REPO
 const tableApiUrl = path => `https://api.github.com/repos/${TABLES_OWNER}/${TABLES_REPO}/contents/${path}?ref=${TABLES_BRANCH}`;
 const ACCESS_JSON_URL= 'https://raw.githubusercontent.com/cmcdatasolutions/catch-dashboard/main/catch_dashboard_access.json';
 const ACCESS_JSON_API= 'https://api.github.com/repos/cmcdatasolutions/catch-dashboard/contents/catch_dashboard_access.json';
@@ -1021,6 +1025,7 @@ function completeLogin(user) {
   selectedProg = (currentUser.program === 'ALL') ? 'All' : currentUser.program;
   document.getElementById('loginOverlay').style.display = 'none';
   updateUserBadge(currentUser);
+  updateRunCheckButton();
   autoLoadExcel();
 }
 
@@ -1046,6 +1051,7 @@ function updateUserBadge(user) {
 function doLogout() {
   currentUser = null; selectedProg = 'All'; selectedDoc = 'All';
   dashRecords=[]; gapsRecords=[]; historyRuns=[];
+  updateRunCheckButton(); setRunCheckStatus('idle', '');
   document.getElementById('loginEmail').value = '';
   document.getElementById('loginError').style.display = 'none';
   document.getElementById('loginBtn').disabled = false;
@@ -1098,6 +1104,69 @@ function csvToObjects(text) {
   const ws = wb.Sheets[wb.SheetNames[0]];
   return XLSX.utils.sheet_to_json(ws, {defval:'', raw:false})
     .filter(r => Object.values(r).some(v => String(v).trim() !== ''));
+}
+
+
+// ══ RUN COMPLIANCE CHECK (GitHub Actions) ════════════════════════════════════
+// The Python script runs in GitHub Actions (scripts/catch_compliance_check.py),
+// rewrites tables/*.csv and commits them; then we reload the tables here.
+// Token needs Actions: Read and write on compliance_remediation.
+let runCheckBusy = false;
+function updateRunCheckButton() {
+  const btn = document.getElementById('runCheckBtn');
+  if (!btn) return;
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  btn.style.display = isAdmin ? '' : 'none';
+  btn.disabled = !isAdmin || runCheckBusy || !getGithubToken() || !dashRecords.length;
+}
+function setRunCheckStatus(kind, html) {
+  const el = document.getElementById('runCheckStatus');
+  el.style.display = html ? '' : 'none';
+  el.className = 'upload-status ' + kind;
+  el.innerHTML = html;
+}
+async function runComplianceCheck() {
+  const token = getGithubToken();
+  if (!token || runCheckBusy) return;
+  const api = `https://api.github.com/repos/${TABLES_OWNER}/${TABLES_REPO}/actions/workflows/${CHECK_WORKFLOW}`;
+  const headers = { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json',
+                    'X-GitHub-Api-Version': '2022-11-28' };
+  runCheckBusy = true; updateRunCheckButton();
+  const started = Date.now() - 15000;
+  try {
+    setRunCheckStatus('idle', '⏳ Starting compliance check…');
+    const d = await fetch(api + '/dispatches', { method: 'POST', headers,
+                          body: JSON.stringify({ ref: TABLES_BRANCH }) });
+    if (d.status === 403 || d.status === 404)
+      throw new Error('token can\'t start workflows — it needs Actions: Read and write on ' + TABLES_REPO);
+    if (!d.ok) throw new Error('GitHub returned HTTP ' + d.status);
+
+    let run = null;
+    const deadline = Date.now() + 15 * 60 * 1000;
+    while (Date.now() < deadline) {
+      await new Promise(r => setTimeout(r, 5000));
+      const res = await fetch(api + '/runs?event=workflow_dispatch&per_page=5&nocache=' + Date.now(), { headers, cache: 'no-store' });
+      if (!res.ok) continue;
+      const runs = (await res.json()).workflow_runs || [];
+      run = runs.find(r => new Date(r.created_at).getTime() >= started) || run;
+      if (!run) { setRunCheckStatus('idle', '⏳ Waiting for GitHub to start the run…'); continue; }
+      const link = ` <a href="${run.html_url}" target="_blank" rel="noopener">log</a>`;
+      if (run.status !== 'completed') {
+        const mins = Math.max(0, Math.round((Date.now() - new Date(run.created_at)) / 1000));
+        setRunCheckStatus('idle', `⏳ Compliance check ${run.status.replace('_',' ')} (${mins}s)…` + link);
+        continue;
+      }
+      if (run.conclusion !== 'success') throw new Error(`run ${run.conclusion}.` + link);
+      setRunCheckStatus('ok', `✓ Compliance check finished ${new Date().toLocaleTimeString()} — tables refreshed.` + link);
+      await autoLoadExcel();
+      return;
+    }
+    throw new Error('still running after 15 minutes — check the Actions tab, then click Reload from Source');
+  } catch (e) {
+    setRunCheckStatus('err', '✗ Compliance check: ' + e.message);
+  } finally {
+    runCheckBusy = false; updateRunCheckButton();
+  }
 }
 
 
@@ -1201,6 +1270,7 @@ function applyComplianceData(raw1, raw2, raw3, sourceName) {
 
     statusEl.className = 'upload-status ok';
     statusEl.textContent = `✓ Loaded: ${sourceName} (${dashRecords.length} docs · ${gapsRecords.length} gaps)`;
+    updateRunCheckButton();
 
   } catch(err) {
     statusEl.className = 'upload-status err';
