@@ -595,6 +595,9 @@
     <button class="upload-btn" onclick="autoLoadExcel()"><i class="ti ti-refresh"></i> Reload from Source</button>
     <button class="upload-btn" id="runCheckBtn" onclick="runComplianceCheck()" disabled style="display:none;background:#2F6B3A"
             title="Re-run the CATCH compliance script on source_docs/ and refresh these tables"><i class="ti ti-player-play"></i> Run Compliance Check</button>
+    <button class="upload-btn" id="uploadDocBtn" onclick="document.getElementById('uploadDocInput').click()" disabled style="display:none;background:#6B4E16"
+            title="Upload a Word (.docx) or PDF contract to source_docs/ on GitHub, then run the compliance check"><i class="ti ti-upload"></i> Upload Document</button>
+    <input type="file" id="uploadDocInput" accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple style="display:none" onchange="uploadDocuments(this)">
     <span class="upload-status idle" id="uploadStatus">Loading from Source…</span>
     <span class="upload-status idle" id="runCheckStatus" style="display:none"></span>
   </div>
@@ -930,7 +933,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 <script>
-const BUILD_VERSION = '2026.10.24-run-check';
+const BUILD_VERSION = '2026.10.24-upload-doc';
 console.log('CATCH Dashboard build:', BUILD_VERSION);
 
 // ══ CONSTANTS ════════════════════════════════════════════════════════════════
@@ -1118,6 +1121,69 @@ function updateRunCheckButton() {
   const isAdmin = currentUser && currentUser.role === 'admin';
   btn.style.display = isAdmin ? '' : 'none';
   btn.disabled = !isAdmin || runCheckBusy || !getGithubToken() || !dashRecords.length;
+  const up = document.getElementById('uploadDocBtn');
+  if (up) { up.style.display = btn.style.display; up.disabled = btn.disabled; }
+}
+
+// ══ UPLOAD DOCUMENT → source_docs/ on GitHub, then run the check ════════════
+const DOCS_FOLDER = 'source_docs';
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1]);
+    r.onerror = () => reject(new Error('could not read ' + file.name));
+    r.readAsDataURL(file);
+  });
+}
+async function uploadDocuments(input) {
+  const files = Array.from(input.files || []);
+  input.value = '';                       // allow picking the same file again later
+  const token = getGithubToken();
+  if (!files.length || !token || runCheckBusy) return;
+  const bad = files.filter(f => !/\.(docx|pdf)$/i.test(f.name));
+  if (bad.length) {
+    setRunCheckStatus('err', '✗ Only .docx and .pdf files can be checked. Save older .doc files as .docx first: ' + bad.map(f => f.name).join(', '));
+    return;
+  }
+  const headers = { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json',
+                    'X-GitHub-Api-Version': '2022-11-28' };
+  runCheckBusy = true; updateRunCheckButton();
+  const done = [];
+  try {
+    for (const f of files) {
+      if (f.size > 50 * 1024 * 1024) throw new Error(f.name + ' is over 50 MB');
+      const url = `https://api.github.com/repos/${TABLES_OWNER}/${TABLES_REPO}/contents/${DOCS_FOLDER}/${encodeURIComponent(f.name)}`;
+      setRunCheckStatus('idle', `⏳ Uploading ${f.name}…`);
+      const existing = await fetch(url + '?ref=' + TABLES_BRANCH + '&nocache=' + Date.now(), { headers, cache: 'no-store' });
+      let sha;
+      if (existing.ok) {
+        if (!confirm(`"${f.name}" is already in ${DOCS_FOLDER}/. Replace it with the file you picked?`)) continue;
+        sha = (await existing.json()).sha;
+      }
+      const body = { message: `${sha ? 'Replace' : 'Add'} ${f.name} (dashboard upload by ${currentUser ? currentUser.email : 'unknown'})`,
+                     content: await fileToBase64(f), branch: TABLES_BRANCH };
+      if (sha) body.sha = sha;
+      let res;
+      for (let attempt = 0; attempt < 3; attempt++) {    // retry if GitHub is busy with the previous commit
+        res = await fetch(url, { method: 'PUT', headers, body: JSON.stringify(body) });
+        if (res.status !== 409) break;
+        await new Promise(r => setTimeout(r, 2000));
+      }
+      if (res.status === 401 || res.status === 403 || res.status === 404)
+        throw new Error('token can\'t write to ' + TABLES_REPO + ' — it needs Contents: Read and write');
+      if (!res.ok) throw new Error(`${f.name}: GitHub returned HTTP ${res.status}`);
+      done.push(f.name);
+    }
+  } catch (e) {
+    runCheckBusy = false; updateRunCheckButton();
+    setRunCheckStatus('err', '✗ Upload: ' + e.message + (done.length ? ` (uploaded: ${done.join(', ')})` : ''));
+    return;
+  }
+  runCheckBusy = false; updateRunCheckButton();
+  if (!done.length) { setRunCheckStatus('idle', 'No files uploaded.'); return; }
+  setRunCheckStatus('ok', `✓ Uploaded ${done.join(', ')} — starting compliance check…`);
+  await new Promise(r => setTimeout(r, 1500));
+  runComplianceCheck();
 }
 function setRunCheckStatus(kind, html) {
   const el = document.getElementById('runCheckStatus');
