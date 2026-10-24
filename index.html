@@ -495,6 +495,23 @@
   .viz-root .kpi-legend { flex-wrap: wrap; justify-content: center; gap: 12px 16px; }
 }
 
+
+/* ── ERD tab (admin only) ── */
+.erd-page { padding: 4px 0 32px; }
+.erd-head h2 { font-size: 20px; margin: 4px 0 6px; color: #1F4E79; }
+.erd-head p { margin: 0 0 16px; color: #52514e; font-size: 14px; max-width: 900px; }
+.erd-scroll { overflow-x: auto; background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+.erd-svg { display: block; width: 100%; min-width: 1000px; height: auto; }
+.erd-sub { font-size: 16px; color: #1F4E79; margin: 24px 0 10px; }
+.erd-table-wrap { overflow-x: auto; }
+.erd-table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; border: 1px solid #E2E8F0; border-radius: 10px; overflow: hidden; }
+.erd-table th { text-align: left; background: #1F4E79; color: #fff; padding: 9px 12px; font-weight: 600; }
+.erd-table td { padding: 9px 12px; border-top: 1px solid #EDF1F5; vertical-align: top; color: #2b2a27; }
+.erd-table tr:nth-child(even) td { background: #F7FAFD; }
+.erd-n span { display: inline-flex; width: 22px; height: 22px; border-radius: 50%; background: #2E75B6; color: #fff; font-weight: 700; font-size: 11px; align-items: center; justify-content: center; }
+.erd-ft { font-weight: 600; white-space: nowrap; }
+.erd-acc { color: #52514e; min-width: 180px; }
+.erd-note { margin-top: 14px; font-size: 13px; color: #52514e; background: #FFF7E6; border: 1px solid #F2D9A6; border-radius: 8px; padding: 10px 14px; }
 </style>
 </head>
 <body>
@@ -597,6 +614,7 @@
     <button class="dash-tab-btn active" id="tabBtn-compliance" onclick="switchDashTab('compliance')">Compliance Gaps</button>
     <button class="dash-tab-btn" id="tabBtn-remediation" onclick="switchDashTab('remediation')">Remediation Tracker</button>
     <button class="dash-tab-btn" id="tabBtn-kpi" onclick="switchDashTab('kpi')">KPI Report</button>
+    <button class="dash-tab-btn" id="tabBtn-erd" onclick="switchDashTab('erd')" style="display:none">ERD</button>
   </div>
   <div id="tabPanel-compliance" class="tab-panel active">
 
@@ -954,11 +972,302 @@
 
   </div><!-- /tabPanel-kpi -->
 
+  <div id="tabPanel-erd" class="tab-panel">
+    <div class="erd-page">
+      <div class="erd-head">
+        <h2>System ERD — how the dashboard, GitHub and Cloudflare connect</h2>
+        <p>High-level view of the three dashboard tabs, the files they read and write in GitHub, the compliance-check automation, and the services that deliver the page. Visible to admins only.</p>
+      </div>
+      <div class="erd-scroll">
+<svg class="erd-svg" viewBox="0 0 1400 1080" role="img" aria-labelledby="erdTitle erdDesc" font-family="Inter, Segoe UI, Arial, sans-serif" xmlns="http://www.w3.org/2000/svg">
+<title id="erdTitle">CATCH dashboard entity relationship diagram</title>
+<desc id="erdDesc">GitHub Pages and the Cloudflare and jsDelivr CDNs deliver the dashboard page. Its tabs read and write files in three GitHub repositories; a GitHub Action runs the compliance script and writes the compliance tables and remediation items.</desc>
+<defs><marker id="erdArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#2E75B6"/></marker></defs>
+<rect x="20" y="20" width="1360" height="150" rx="12" fill="#F5F4EF" stroke="#D9D6CB"/>
+<text x="36" y="42" font-size="12" font-weight="700" fill="#3d3c38" text-anchor="start" letter-spacing=".08em">HOSTING &amp; CONTENT DELIVERY</text>
+<rect x="40" y="52" width="420" height="100" rx="8" fill="#fff" stroke="#24292F" stroke-width="1.5"/>
+<rect x="40" y="52" width="420" height="26" rx="8" fill="#24292F"/>
+<rect x="40" y="70" width="420" height="8" fill="#24292F"/>
+<text x="50" y="70" font-size="13" font-weight="700" fill="#fff" text-anchor="start" >GitHub Pages — hosts the dashboard</text>
+<text x="50" y="98" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >cmcdatasolutions.github.io/Catch_Remediation_Dashboard</text>
+<text x="50" y="116" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >cmcdatasolutions.github.io/catch-dashboard (mirror)</text>
+<text x="50" y="134" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Serves index.html from the public repos</text>
+<rect x="490" y="52" width="420" height="100" rx="8" fill="#fff" stroke="#C2410C" stroke-width="1.5"/>
+<rect x="490" y="52" width="420" height="26" rx="8" fill="#C2410C"/>
+<rect x="490" y="70" width="420" height="8" fill="#C2410C"/>
+<text x="500" y="70" font-size="13" font-weight="700" fill="#fff" text-anchor="start" >Cloudflare cdnjs — library CDN</text>
+<text x="500" y="98" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >SheetJS xlsx 0.18.5 — reads the CSV tables</text>
+<text x="500" y="116" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >ExcelJS 4.3.0 — Export to Excel</text>
+<text x="500" y="134" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >cdnjs.cloudflare.com</text>
+<rect x="940" y="52" width="420" height="100" rx="8" fill="#fff" stroke="#5B5B5B" stroke-width="1.5"/>
+<rect x="940" y="52" width="420" height="26" rx="8" fill="#5B5B5B"/>
+<rect x="940" y="70" width="420" height="8" fill="#5B5B5B"/>
+<text x="950" y="70" font-size="13" font-weight="700" fill="#fff" text-anchor="start" >jsDelivr — icon CDN</text>
+<text x="950" y="98" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Tabler icon font for buttons and menus</text>
+<text x="950" y="116" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >cdn.jsdelivr.net</text>
+<rect x="20" y="210" width="1360" height="190" rx="12" fill="#EEF4FB" stroke="#C7D8EC"/>
+<text x="36" y="232" font-size="12" font-weight="700" fill="#3d3c38" text-anchor="start" letter-spacing=".08em">BROWSER — DASHBOARD PAGE</text>
+<path d="M 330 152 L 330 246" fill="none" stroke="#2E75B6" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#erdArrow)"/>
+<circle cx="330" cy="186" r="10" fill="#2E75B6" stroke="#2E75B6" stroke-width="1.5"/>
+<text x="330" y="190" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" >1</text>
+<path d="M 700 152 L 700 246" fill="none" stroke="#2E75B6" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#erdArrow)"/>
+<circle cx="700" cy="186" r="10" fill="#2E75B6" stroke="#2E75B6" stroke-width="1.5"/>
+<text x="700" y="190" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" >2</text>
+<path d="M 1150 152 L 1150 246" fill="none" stroke="#2E75B6" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#erdArrow)"/>
+<circle cx="1150" cy="186" r="10" fill="#2E75B6" stroke="#2E75B6" stroke-width="1.5"/>
+<text x="1150" y="190" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" >3</text>
+<rect x="40" y="248" width="220" height="130" rx="8" fill="#fff" stroke="#6B21A8" stroke-width="1.5"/>
+<rect x="40" y="248" width="220" height="26" rx="8" fill="#6B21A8"/>
+<rect x="40" y="266" width="220" height="8" fill="#6B21A8"/>
+<text x="50" y="266" font-size="13" font-weight="700" fill="#fff" text-anchor="start" >Login &amp; Admin panel</text>
+<text x="50" y="294" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Email login → role</text>
+<text x="50" y="312" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Admin panel edits users</text>
+<text x="50" y="330" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >GitHub token (this tab)</text>
+<rect x="280" y="248" width="280" height="130" rx="8" fill="#fff" stroke="#1F4E79" stroke-width="1.5"/>
+<rect x="280" y="248" width="280" height="26" rx="8" fill="#1F4E79"/>
+<rect x="280" y="266" width="280" height="8" fill="#1F4E79"/>
+<text x="290" y="266" font-size="13" font-weight="700" fill="#fff" text-anchor="start" >Compliance Gaps</text>
+<text x="290" y="294" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Upload Document</text>
+<text x="290" y="312" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Reload from Source</text>
+<text x="290" y="330" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Run Compliance Check</text>
+<text x="290" y="348" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Program / document filters</text>
+<rect x="580" y="248" width="260" height="130" rx="8" fill="#fff" stroke="#1F4E79" stroke-width="1.5"/>
+<rect x="580" y="248" width="260" height="26" rx="8" fill="#1F4E79"/>
+<rect x="580" y="266" width="260" height="8" fill="#1F4E79"/>
+<text x="590" y="266" font-size="13" font-weight="700" fill="#fff" text-anchor="start" >Remediation Tracker</text>
+<text x="590" y="294" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Items · status · category</text>
+<text x="590" y="312" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Add / Edit / Delete (admin)</text>
+<text x="590" y="330" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Each change = a commit</text>
+<rect x="860" y="248" width="220" height="130" rx="8" fill="#fff" stroke="#1F4E79" stroke-width="1.5"/>
+<rect x="860" y="248" width="220" height="26" rx="8" fill="#1F4E79"/>
+<rect x="860" y="266" width="220" height="8" fill="#1F4E79"/>
+<text x="870" y="266" font-size="13" font-weight="700" fill="#fff" text-anchor="start" >KPI Report</text>
+<text x="870" y="294" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Status, cost, critical charts</text>
+<text x="870" y="312" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Category filter</text>
+<text x="870" y="330" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Uses Remediation items</text>
+<circle cx="1066" cy="261" r="10" fill="#fff" stroke="#2E75B6" stroke-width="1.5"/>
+<text x="1066" y="265" font-size="11" font-weight="700" fill="#1F4E79" text-anchor="middle" >10</text>
+<rect x="1100" y="248" width="260" height="130" rx="8" fill="#fff" stroke="#5B5B5B" stroke-width="1.5"/>
+<rect x="1100" y="248" width="260" height="26" rx="8" fill="#5B5B5B"/>
+<rect x="1100" y="266" width="260" height="8" fill="#5B5B5B"/>
+<text x="1110" y="266" font-size="13" font-weight="700" fill="#fff" text-anchor="start" >ERD (admin only)</text>
+<text x="1110" y="294" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >This diagram</text>
+<text x="1110" y="312" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Hidden from user logins</text>
+<path d="M 840 300 L 858 300" fill="none" stroke="#2E75B6" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#erdArrow)"/>
+<rect x="20" y="440" width="1360" height="620" rx="12" fill="#F7F7F4" stroke="#D9D6CB"/>
+<text x="36" y="462" font-size="12" font-weight="700" fill="#3d3c38" text-anchor="start" letter-spacing=".08em">GITHUB</text>
+<rect x="40" y="480" width="300" height="250" rx="10" fill="#fff" stroke="#8C8A82" stroke-dasharray="5 4"/>
+<text x="54" y="502" font-size="13" font-weight="700" fill="#1d1d1b" text-anchor="start" >catch-dashboard</text>
+<text x="326" y="502" font-size="10" font-weight="700" fill="#B42318" text-anchor="end" >PUBLIC</text>
+<rect x="56" y="540" width="268" height="126" rx="6" fill="#fff" stroke="#6B21A8" stroke-width="1.5"/>
+<rect x="56" y="540" width="268" height="26" rx="6" fill="#6B21A8"/>
+<rect x="56" y="558" width="268" height="8" fill="#6B21A8"/>
+<text x="66" y="558" font-size="12.5" font-weight="700" fill="#fff" text-anchor="start" letter-spacing=".03em">USERS</text>
+<text x="66" y="582" font-size="11" font-weight="400" fill="#6b6a64" text-anchor="start" font-style="italic">catch_dashboard_access.json</text>
+<rect x="64" y="591" width="22" height="14" rx="3" fill="#B7791F"/>
+<text x="75" y="602" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" >PK</text>
+<text x="92" y="602" font-size="12" font-weight="400" fill="#1d1d1b" text-anchor="start" >EmailAddress</text>
+<text x="92" y="620" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >FirstName · LastName</text>
+<text x="92" y="638" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Program (ALL, GUIDE, …)</text>
+<text x="92" y="656" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Role (admin / user)</text>
+<line x1="56" y1="588" x2="324" y2="588" stroke="#e4e2da"/>
+<text x="54" y="712" font-size="12" font-weight="400" fill="#3d3c38" text-anchor="start" >index.html → GitHub Pages (mirror)</text>
+<rect x="40" y="750" width="300" height="104" rx="10" fill="#fff" stroke="#8C8A82" stroke-dasharray="5 4"/>
+<text x="54" y="772" font-size="13" font-weight="700" fill="#1d1d1b" text-anchor="start" >Catch_Remediation_Dashboard</text>
+<text x="326" y="772" font-size="10" font-weight="700" fill="#B42318" text-anchor="end" >PUBLIC</text>
+<text x="54" y="800" font-size="12" font-weight="400" fill="#1d1d1b" text-anchor="start" >index.html → GitHub Pages (your link)</text>
+<text x="54" y="820" font-size="12" font-weight="400" fill="#6b6a64" text-anchor="start" >Same page as the other two copies</text>
+<text x="54" y="838" font-size="12" font-weight="400" fill="#6b6a64" text-anchor="start" >(compliance_remediation holds one too)</text>
+<rect x="360" y="480" width="1000" height="568" rx="10" fill="#fff" stroke="#3d3c38" stroke-width="1.5"/>
+<text x="456" y="502" font-size="13" font-weight="700" fill="#1d1d1b" text-anchor="start" >compliance_remediation</text>
+<text x="700" y="502" font-size="11" font-weight="700" fill="#1F6F3F" text-anchor="start" >🔒 PRIVATE</text>
+<rect x="376" y="520" width="180" height="108" rx="6" fill="#fff" stroke="#1F4E79" stroke-width="1.5"/>
+<rect x="376" y="520" width="180" height="26" rx="6" fill="#1F4E79"/>
+<rect x="376" y="538" width="180" height="8" fill="#1F4E79"/>
+<text x="386" y="538" font-size="12.5" font-weight="700" fill="#fff" text-anchor="start" letter-spacing=".03em">SOURCE_DOCS</text>
+<text x="386" y="562" font-size="11" font-weight="400" fill="#6b6a64" text-anchor="start" font-style="italic">source_docs/</text>
+<rect x="384" y="571" width="22" height="14" rx="3" fill="#B7791F"/>
+<text x="395" y="582" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" >PK</text>
+<text x="412" y="582" font-size="12" font-weight="400" fill="#1d1d1b" text-anchor="start" >File name</text>
+<text x="412" y="600" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >.pdf / .docx</text>
+<text x="412" y="618" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Contracts (11 today)</text>
+<line x1="376" y1="568" x2="556" y2="568" stroke="#e4e2da"/>
+<rect x="376" y="700" width="180" height="90" rx="6" fill="#fff" stroke="#1F4E79" stroke-width="1.5"/>
+<rect x="376" y="700" width="180" height="26" rx="6" fill="#1F4E79"/>
+<rect x="376" y="718" width="180" height="8" fill="#1F4E79"/>
+<text x="386" y="718" font-size="12.5" font-weight="700" fill="#fff" text-anchor="start" letter-spacing=".03em">CONTRACTS_PROGRAMS</text>
+<text x="386" y="742" font-size="11" font-weight="400" fill="#6b6a64" text-anchor="start" font-style="italic">tables/contracts_programs.csv</text>
+<text x="412" y="762" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Document Name</text>
+<text x="412" y="780" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Program</text>
+<line x1="376" y1="748" x2="556" y2="748" stroke="#e4e2da"/>
+<rect x="596" y="540" width="150" height="112" rx="8" fill="#fff" stroke="#2E7D32" stroke-width="1.5"/>
+<rect x="596" y="540" width="150" height="26" rx="8" fill="#2E7D32"/>
+<rect x="596" y="558" width="150" height="8" fill="#2E7D32"/>
+<text x="606" y="558" font-size="13" font-weight="700" fill="#fff" text-anchor="start" >GitHub Actions</text>
+<text x="606" y="586" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >run-compliance.yml</text>
+<text x="606" y="604" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >compliance_check.py</text>
+<text x="606" y="622" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >pdfplumber, docx</text>
+<text x="606" y="640" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >commits results</text>
+<circle cx="732" cy="553" r="10" fill="#fff" stroke="#2E75B6" stroke-width="1.5"/>
+<text x="732" y="557" font-size="11" font-weight="700" fill="#2E7D32" text-anchor="middle" >9</text>
+<rect x="786" y="520" width="240" height="162" rx="6" fill="#fff" stroke="#1F4E79" stroke-width="1.5"/>
+<rect x="786" y="520" width="240" height="26" rx="6" fill="#1F4E79"/>
+<rect x="786" y="538" width="240" height="8" fill="#1F4E79"/>
+<text x="796" y="538" font-size="12.5" font-weight="700" fill="#fff" text-anchor="start" letter-spacing=".03em">COMPLIANCE_DOCUMENTS</text>
+<text x="796" y="562" font-size="11" font-weight="400" fill="#6b6a64" text-anchor="start" font-style="italic">tables/compliance_documents.csv</text>
+<rect x="794" y="571" width="22" height="14" rx="3" fill="#B7791F"/>
+<text x="805" y="582" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" >PK</text>
+<text x="822" y="582" font-size="12" font-weight="400" fill="#1d1d1b" text-anchor="start" >#</text>
+<rect x="794" y="589" width="22" height="14" rx="3" fill="#2E75B6"/>
+<text x="805" y="600" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" >FK</text>
+<text x="822" y="600" font-size="12" font-weight="400" fill="#1d1d1b" text-anchor="start" >Document Name</text>
+<text x="822" y="618" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Program · Vendor/Party</text>
+<text x="822" y="636" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Effective / End Date</text>
+<text x="822" y="654" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >8 clause checks</text>
+<text x="822" y="672" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Status · Issues Found</text>
+<line x1="786" y1="568" x2="1026" y2="568" stroke="#e4e2da"/>
+<rect x="786" y="720" width="240" height="126" rx="6" fill="#fff" stroke="#1F4E79" stroke-width="1.5"/>
+<rect x="786" y="720" width="240" height="26" rx="6" fill="#1F4E79"/>
+<rect x="786" y="738" width="240" height="8" fill="#1F4E79"/>
+<text x="796" y="738" font-size="12.5" font-weight="700" fill="#fff" text-anchor="start" letter-spacing=".03em">COMPLIANCE_GAPS</text>
+<text x="796" y="762" font-size="11" font-weight="400" fill="#6b6a64" text-anchor="start" font-style="italic">tables/compliance_gaps.csv</text>
+<rect x="794" y="771" width="22" height="14" rx="3" fill="#B7791F"/>
+<text x="805" y="782" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" >PK</text>
+<text x="822" y="782" font-size="12" font-weight="400" fill="#1d1d1b" text-anchor="start" >#</text>
+<rect x="794" y="789" width="22" height="14" rx="3" fill="#2E75B6"/>
+<text x="805" y="800" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" >FK</text>
+<text x="822" y="800" font-size="12" font-weight="400" fill="#1d1d1b" text-anchor="start" >Document Name</text>
+<text x="822" y="818" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Gap Category</text>
+<text x="822" y="836" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Severity · Resolution</text>
+<line x1="786" y1="768" x2="1026" y2="768" stroke="#e4e2da"/>
+<rect x="786" y="880" width="240" height="126" rx="6" fill="#fff" stroke="#1F4E79" stroke-width="1.5"/>
+<rect x="786" y="880" width="240" height="26" rx="6" fill="#1F4E79"/>
+<rect x="786" y="898" width="240" height="8" fill="#1F4E79"/>
+<text x="796" y="898" font-size="12.5" font-weight="700" fill="#fff" text-anchor="start" letter-spacing=".03em">RUN_HISTORY</text>
+<text x="796" y="922" font-size="11" font-weight="400" fill="#6b6a64" text-anchor="start" font-style="italic">tables/run_history.csv</text>
+<rect x="794" y="931" width="22" height="14" rx="3" fill="#B7791F"/>
+<text x="805" y="942" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" >PK</text>
+<text x="822" y="942" font-size="12" font-weight="400" fill="#1d1d1b" text-anchor="start" >Run #</text>
+<text x="822" y="960" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Date &amp; Time</text>
+<text x="822" y="978" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Docs · Compliant · Review</text>
+<text x="822" y="996" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >+ compliance_history.json</text>
+<line x1="786" y1="928" x2="1026" y2="928" stroke="#e4e2da"/>
+<rect x="1076" y="520" width="270" height="162" rx="6" fill="#fff" stroke="#1F4E79" stroke-width="1.5"/>
+<rect x="1076" y="520" width="270" height="26" rx="6" fill="#1F4E79"/>
+<rect x="1076" y="538" width="270" height="8" fill="#1F4E79"/>
+<text x="1086" y="538" font-size="12.5" font-weight="700" fill="#fff" text-anchor="start" letter-spacing=".03em">REMEDIATION_ITEMS</text>
+<text x="1086" y="562" font-size="11" font-weight="400" fill="#6b6a64" text-anchor="start" font-style="italic">data.json</text>
+<rect x="1084" y="571" width="22" height="14" rx="3" fill="#B7791F"/>
+<text x="1095" y="582" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" >PK</text>
+<text x="1112" y="582" font-size="12" font-weight="400" fill="#1d1d1b" text-anchor="start" >sn (CG-n for gaps)</text>
+<text x="1112" y="600" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Item · Action</text>
+<text x="1112" y="618" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Category · Status</text>
+<text x="1112" y="636" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Owner · Cost · Duration</text>
+<text x="1112" y="654" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Risk · Dependency</text>
+<text x="1112" y="672" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Risk rating</text>
+<line x1="1076" y1="568" x2="1346" y2="568" stroke="#e4e2da"/>
+<rect x="1076" y="740" width="270" height="108" rx="6" fill="#fff" stroke="#1F4E79" stroke-width="1.5"/>
+<rect x="1076" y="740" width="270" height="26" rx="6" fill="#1F4E79"/>
+<rect x="1076" y="758" width="270" height="8" fill="#1F4E79"/>
+<text x="1086" y="758" font-size="12.5" font-weight="700" fill="#fff" text-anchor="start" letter-spacing=".03em">GAP_IMPORTS</text>
+<text x="1086" y="782" font-size="11" font-weight="400" fill="#6b6a64" text-anchor="start" font-style="italic">tables/remediation_gap_imports.json</text>
+<rect x="1084" y="791" width="22" height="14" rx="3" fill="#B7791F"/>
+<text x="1095" y="802" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" >PK</text>
+<text x="1112" y="802" font-size="12" font-weight="400" fill="#1d1d1b" text-anchor="start" >Document | Gap</text>
+<rect x="1084" y="809" width="22" height="14" rx="3" fill="#2E75B6"/>
+<text x="1095" y="820" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" >FK</text>
+<text x="1112" y="820" font-size="12" font-weight="400" fill="#1d1d1b" text-anchor="start" >sn → REMEDIATION_ITEMS</text>
+<text x="1112" y="838" font-size="12" font-weight="400" fill="#2b2a27" text-anchor="start" >Imported date</text>
+<line x1="1076" y1="788" x2="1346" y2="788" stroke="#e4e2da"/>
+<line x1="906" y1="682" x2="906" y2="720" stroke="#3d3c38" stroke-width="1.6"/>
+<line x1="899" y1="689" x2="913" y2="689" stroke="#3d3c38" stroke-width="1.6"/>
+<path d="M 899 720 L 906 710 L 913 720" fill="none" stroke="#3d3c38" stroke-width="1.6"/>
+<line x1="899" y1="707" x2="913" y2="707" stroke="#3d3c38" stroke-width="1.6"/>
+<text x="916" y="696" font-size="11" font-weight="700" fill="#3d3c38" text-anchor="start" >1</text>
+<text x="916" y="714" font-size="11" font-weight="700" fill="#3d3c38" text-anchor="start" >0..N</text>
+<line x1="1026" y1="790" x2="1076" y2="790" stroke="#3d3c38" stroke-width="1.6"/>
+<line x1="1033" y1="783" x2="1033" y2="797" stroke="#3d3c38" stroke-width="1.6"/>
+<line x1="1070" y1="783" x2="1070" y2="797" stroke="#3d3c38" stroke-width="1.6"/>
+<circle cx="1062" cy="790" r="4" fill="#fff" stroke="#3d3c38" stroke-width="1.6"/>
+<text x="1030" y="781" font-size="11" font-weight="700" fill="#3d3c38" text-anchor="start" >1</text>
+<text x="1072" y="781" font-size="11" font-weight="700" fill="#3d3c38" text-anchor="end" >0..1</text>
+<line x1="1211" y1="682" x2="1211" y2="740" stroke="#3d3c38" stroke-width="1.6"/>
+<line x1="1204" y1="688" x2="1218" y2="688" stroke="#3d3c38" stroke-width="1.6"/>
+<circle cx="1211" cy="696" r="4" fill="#fff" stroke="#3d3c38" stroke-width="1.6"/>
+<line x1="1204" y1="733" x2="1218" y2="733" stroke="#3d3c38" stroke-width="1.6"/>
+<text x="1221" y="696" font-size="11" font-weight="700" fill="#3d3c38" text-anchor="start" >0..1</text>
+<text x="1221" y="734" font-size="11" font-weight="700" fill="#3d3c38" text-anchor="start" >1</text>
+<text x="1219" y="714" font-size="11" font-weight="400" fill="#1d1d1b" text-anchor="start" ></text>
+<path d="M 556 590 L 594 590" fill="none" stroke="#2E75B6" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#erdArrow)"/>
+<path d="M 556 745 L 671 745 L 671 654" fill="none" stroke="#2E75B6" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#erdArrow)"/>
+<path d="M 746 600 L 784 600" fill="none" stroke="#2E75B6" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#erdArrow)"/>
+<path d="M 746 630 L 766 630 L 766 780 L 784 780" fill="none" stroke="#2E75B6" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#erdArrow)"/>
+<path d="M 766 780 L 766 940 L 784 940" fill="none" stroke="#2E75B6" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#erdArrow)"/>
+<path d="M 766 940 L 766 1022 L 1300 1022 L 1300 850" fill="none" stroke="#2E75B6" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#erdArrow)"/>
+<text x="800" y="1036" font-size="11" font-weight="600" fill="#2E75B6" text-anchor="start" >new gaps → GAP_IMPORTS + REMEDIATION_ITEMS (data.json)</text>
+<path d="M 240 378 L 240 538" fill="none" stroke="#2E75B6" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#erdArrow)"/>
+<circle cx="240" cy="400" r="10" fill="#2E75B6" stroke="#2E75B6" stroke-width="1.5"/>
+<text x="240" y="404" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" >4</text>
+<path d="M 440 378 L 440 518" fill="none" stroke="#2E75B6" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#erdArrow)"/>
+<circle cx="440" cy="400" r="10" fill="#2E75B6" stroke="#2E75B6" stroke-width="1.5"/>
+<text x="440" y="404" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" >5</text>
+<path d="M 500 378 L 500 455 L 671 455 L 671 538" fill="none" stroke="#2E75B6" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#erdArrow)"/>
+<circle cx="500" cy="400" r="10" fill="#2E75B6" stroke="#2E75B6" stroke-width="1.5"/>
+<text x="500" y="404" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" >6</text>
+<path d="M 540 378 L 540 440 L 906 440 L 906 518" fill="none" stroke="#2E75B6" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#erdArrow)"/>
+<circle cx="540" cy="410" r="10" fill="#2E75B6" stroke="#2E75B6" stroke-width="1.5"/>
+<text x="540" y="414" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" >7</text>
+<path d="M 760 378 L 760 425 L 1211 425 L 1211 518" fill="none" stroke="#2E75B6" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#erdArrow)"/>
+<circle cx="760" cy="400" r="10" fill="#2E75B6" stroke="#2E75B6" stroke-width="1.5"/>
+<text x="760" y="404" font-size="11" font-weight="700" fill="#fff" text-anchor="middle" >8</text>
+<g transform="translate(40,880)">
+<rect width="300" height="160" rx="10" fill="#fff" stroke="#D9D6CB"/>
+<text x="14" y="22" font-size="11" font-weight="700" fill="#3d3c38" text-anchor="start" letter-spacing=".08em">LEGEND</text>
+<line x1="14" y1="44" x2="60" y2="44" stroke="#2E75B6" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#erdArrow)"/>
+<text x="70" y="48" font-size="12" font-weight="400" fill="#1d1d1b" text-anchor="start" >Data flow / API call (see table)</text>
+<line x1="14" y1="70" x2="60" y2="70" stroke="#3d3c38" stroke-width="1.6"/>
+<text x="70" y="74" font-size="12" font-weight="400" fill="#1d1d1b" text-anchor="start" >Relationship (1, 0..1, 0..N)</text>
+<rect x="14" y="88" width="22" height="14" rx="3" fill="#B7791F"/>
+<text x="25" y="99" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" >PK</text>
+<text x="44" y="99" font-size="12" font-weight="400" fill="#1d1d1b" text-anchor="start" >Primary key</text>
+<rect x="130" y="88" width="22" height="14" rx="3" fill="#2E75B6"/>
+<text x="141" y="99" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" >FK</text>
+<text x="160" y="99" font-size="12" font-weight="400" fill="#1d1d1b" text-anchor="start" >Foreign key</text>
+<rect x="14" y="116" width="22" height="14" rx="3" fill="#fff" stroke="#8C8A82" stroke-dasharray="3 2"/>
+<text x="44" y="127" font-size="12" font-weight="400" fill="#1d1d1b" text-anchor="start" >Public repo</text>
+<rect x="130" y="116" width="22" height="14" rx="3" fill="#fff" stroke="#3d3c38" stroke-width="1.5"/>
+<text x="160" y="127" font-size="12" font-weight="400" fill="#1d1d1b" text-anchor="start" >Private repo</text>
+<text x="14" y="150" font-size="11" font-weight="400" fill="#6b6a64" text-anchor="start" >Numbers match the table below.</text>
+</g>
+</svg>
+      </div>
+      <h3 class="erd-sub">Connections</h3>
+      <div class="erd-table-wrap">
+        <table class="erd-table">
+          <thead><tr><th>#</th><th>From → To</th><th>What happens</th><th>Access needed</th></tr></thead>
+          <tbody>
+<tr><td class="erd-n"><span>1</span></td><td class="erd-ft">GitHub Pages → Browser</td><td>Serves index.html from the public Catch_Remediation_Dashboard and catch-dashboard repos.</td><td class="erd-acc">Public</td></tr>
+<tr><td class="erd-n"><span>2</span></td><td class="erd-ft">Cloudflare cdnjs → Browser</td><td>Loads SheetJS (parses the CSV tables) and ExcelJS (Export to Excel).</td><td class="erd-acc">Public</td></tr>
+<tr><td class="erd-n"><span>3</span></td><td class="erd-ft">jsDelivr → Browser</td><td>Loads the icon font.</td><td class="erd-acc">Public</td></tr>
+<tr><td class="erd-n"><span>4</span></td><td class="erd-ft">Login &amp; Admin panel ↔ USERS</td><td>Login reads catch_dashboard_access.json to find the email and role; the Admin panel saves user changes back.</td><td class="erd-acc">Read: public, no token · Save: token</td></tr>
+<tr><td class="erd-n"><span>5</span></td><td class="erd-ft">Upload Document → SOURCE_DOCS</td><td>Adds or replaces a .docx / .pdf in source_docs/, then starts flow 6.</td><td class="erd-acc">Admin · token with Contents write</td></tr>
+<tr><td class="erd-n"><span>6</span></td><td class="erd-ft">Run Compliance Check → GitHub Actions</td><td>Starts run-compliance.yml and waits for it, then reloads flows 7 and 8.</td><td class="erd-acc">Admin · token with Actions write</td></tr>
+<tr><td class="erd-n"><span>7</span></td><td class="erd-ft">Reload from Source → compliance tables</td><td>Reads compliance_documents, compliance_gaps and run_history CSVs into the Compliance Gaps tab.</td><td class="erd-acc">Token with Contents read</td></tr>
+<tr><td class="erd-n"><span>8</span></td><td class="erd-ft">Remediation Tracker ↔ REMEDIATION_ITEMS</td><td>Loads data.json; every status change, add, edit or delete is saved as a commit.</td><td class="erd-acc">Token with Contents write · edit/delete admin only</td></tr>
+<tr><td class="erd-n"><span>9</span></td><td class="erd-ft">GitHub Actions → tables + data.json</td><td>Runs the compliance script on source_docs/ using contracts_programs for the program lookup; rewrites the three CSVs and history; adds each new Document | Gap once to data.json as a Pending “Compliance” item (CG-n), skipping items that already exist.</td><td class="erd-acc">GitHub’s built-in workflow token</td></tr>
+<tr><td class="erd-n"><span>10</span></td><td class="erd-ft">Remediation Tracker → KPI Report</td><td>KPI charts are calculated in the browser from the loaded remediation items, filtered by category.</td><td class="erd-acc">No extra access</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="erd-note"><strong>Watch-outs:</strong> the user list (flow 4) sits in a public repo, so anyone can read those names and emails. The dashboard enforces “admin only” on the page, but anyone holding a write token can change the private repo directly on GitHub.</p>
+    </div>
+  </div><!-- /tabPanel-erd -->
+
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 <script>
-const BUILD_VERSION = '2026.10.24-kpi-filter';
+const BUILD_VERSION = '2026.10.24-erd';
 console.log('CATCH Dashboard build:', BUILD_VERSION);
 
 // ══ CONSTANTS ════════════════════════════════════════════════════════════════
@@ -1146,6 +1455,12 @@ function updateRunCheckButton() {
   const btn = document.getElementById('runCheckBtn');
   if (!btn) return;
   const isAdmin = currentUser && currentUser.role === 'admin';
+  // ERD tab: shown to admins only; leave it if a non-admin is on it.
+  const erdBtn = document.getElementById('tabBtn-erd');
+  if (erdBtn) {
+    erdBtn.style.display = isAdmin ? '' : 'none';
+    if (!isAdmin && document.getElementById('tabPanel-erd').classList.contains('active')) switchDashTab('compliance');
+  }
   btn.style.display = isAdmin ? '' : 'none';
   btn.disabled = !isAdmin || runCheckBusy || !getGithubToken() || !dashRecords.length;
   const up = document.getElementById('uploadDocBtn');
@@ -1867,6 +2182,7 @@ async function exportExcel() {
 
 <script>
 function switchDashTab(name) {
+  if (name === 'erd' && !(currentUser && currentUser.role === 'admin')) name = 'compliance';   // ERD is admin-only
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.dash-tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tabPanel-' + name).classList.add('active');
