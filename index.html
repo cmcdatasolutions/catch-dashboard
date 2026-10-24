@@ -294,6 +294,9 @@
 .viz-root tr.item-row.selected { background: color-mix(in srgb, #2E75B6 9%, transparent); }
 .viz-root .btn.danger { background: #C62828; color: #FFFFFF; border-color: #C62828; font-weight: 600; }
 .viz-root .btn.danger:hover:not(:disabled) { background: #A31F1F; border-color: #A31F1F; color: #FFFFFF; }
+.viz-root .btn.go { background: #2E7D32; color: #FFFFFF; border-color: #2E7D32; font-weight: 600; }
+.viz-root .btn.go:hover:not(:disabled) { background: #1F5F24; border-color: #1F5F24; color: #FFFFFF; }
+.viz-root .cat-input[readonly], .viz-root .detail-edit[readonly] { background: transparent; cursor: default; }
 .viz-root .btn:disabled { opacity: .45; cursor: not-allowed; }
 
 .viz-root tr.detail-row td {
@@ -775,7 +778,7 @@
       <span class="upload-status idle" id="remGhStatus" title="Click to connect or reload" style="cursor:pointer;">Not connected to GitHub</span>
       <button class="btn" id="remGhConnectBtn" type="button">🔗 Connect GitHub</button>
       <button class="btn primary" id="remAddItemBtn" type="button">+ Add item</button>
-      <button class="btn" id="remEditSelBtn" type="button" disabled title="Tick exactly one item to edit it">✎ Edit selected</button>
+      <button class="btn go" id="remEditSelBtn" type="button" disabled title="Tick exactly one item to edit it">✎ Edit selected</button>
       <button class="btn danger" id="remDeleteSelBtn" type="button" disabled title="Tick items to delete them">🗑 Delete selected</button>
       <button class="btn" id="remExportBtn" type="button">⭳ Export progress</button>
       <label class="btn" for="remImportFile">⭱ Import progress</label>
@@ -942,7 +945,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 <script>
-const BUILD_VERSION = '2026.10.24-rem-select-gaps';
+const BUILD_VERSION = '2026.10.24-admin-edit';
 console.log('CATCH Dashboard build:', BUILD_VERSION);
 
 // ══ CONSTANTS ════════════════════════════════════════════════════════════════
@@ -1038,6 +1041,7 @@ function completeLogin(user) {
   document.getElementById('loginOverlay').style.display = 'none';
   updateUserBadge(currentUser);
   updateRunCheckButton();
+  if (typeof remRenderAll === 'function') remRenderAll();
   autoLoadExcel();
 }
 
@@ -1064,6 +1068,7 @@ function doLogout() {
   currentUser = null; selectedProg = 'All'; selectedDoc = 'All';
   dashRecords=[]; gapsRecords=[]; historyRuns=[];
   updateRunCheckButton(); setRunCheckStatus('idle', '');
+  if (typeof remRenderAll === 'function') remRenderAll();
   document.getElementById('loginEmail').value = '';
   document.getElementById('loginError').style.display = 'none';
   document.getElementById('loginBtn').disabled = false;
@@ -1985,7 +1990,10 @@ function remRenderTable() {
       <td class="longtext" title="${remEscapeHtml(it.dependency || '—')}">${remEscapeHtml(it.dependency || '—')}</td>
       <td class="longtext" title="${remEscapeHtml(it.risks || '—')}">${remEscapeHtml(it.risks || '—')}</td>
     `;
+    const isAdmin = remIsAdmin();
     const selBox = row.querySelector('.rem-sel');
+    selBox.disabled = !isAdmin;
+    if (!isAdmin) { remSelected.delete(it); selBox.title = 'Only admins can select items to edit or delete'; }
     selBox.checked = remSelected.has(it);
     row.classList.toggle('selected', selBox.checked);
     selBox.addEventListener('click', e => e.stopPropagation());
@@ -2022,8 +2030,10 @@ function remRenderTable() {
     catInput.value = it.category || '';
     catInput.placeholder = 'Uncategorized';
     catInput.setAttribute('list', 'remCategoryOptions');
+    if (!isAdmin) { catInput.readOnly = true; catInput.title = 'Only admins can edit items'; }
     catInput.addEventListener('click', e => e.stopPropagation());
     catInput.addEventListener('change', e => {
+      if (!remIsAdmin()) return;
       const val = e.target.value.trim();
       if (val === (it.category || '')) return;
       it.category = val;
@@ -2057,8 +2067,13 @@ function remRenderTable() {
     qTextarea.value = it.question;
     aTextarea.value = it.action;
     [qTextarea, aTextarea].forEach(ta => ta.addEventListener('click', e => e.stopPropagation()));
+    if (!isAdmin) {
+      [qTextarea, aTextarea].forEach(ta => { ta.readOnly = true; });
+      detail.querySelector('.detail-save-row').style.display = 'none';
+    }
     detail.querySelector('.detail-save-btn').addEventListener('click', e => {
       e.stopPropagation();
+      if (!remIsAdmin()) return;
       const newQ = qTextarea.value.trim();
       const newA = aTextarea.value.trim();
       it.question = newQ;
@@ -2166,13 +2181,19 @@ function remLogImportNote(msg) {
 
 // ══ SELECT / DELETE / EDIT ══════════════════════════════════════════════════
 const remSelected = new Set();          // item objects ticked in the table
+// Delete and edit are admin-only (role from the login access list).
+function remIsAdmin() { return !!(typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'admin'); }
 function remUpdateSelectionUi() {
   for (const it of Array.from(remSelected)) if (!REM_ITEMS.includes(it)) remSelected.delete(it);
   const n = remSelected.size;
+  const admin = remIsAdmin();
   const del = document.getElementById('remDeleteSelBtn');
   const edit = document.getElementById('remEditSelBtn');
-  del.disabled = n === 0;  del.textContent = n ? `🗑 Delete selected (${n})` : '🗑 Delete selected';
-  edit.disabled = n !== 1;
+  del.disabled = !admin || n === 0;  del.textContent = n ? `🗑 Delete selected (${n})` : '🗑 Delete selected';
+  edit.disabled = !admin || n !== 1;
+  del.title  = admin ? 'Tick items to delete them' : 'Only admins can delete items';
+  edit.title = admin ? 'Tick exactly one item to edit it' : 'Only admins can edit items';
+  document.getElementById('remSelectAll').disabled = !admin;
   const visible = remGetFilteredItems();
   const all = document.getElementById('remSelectAll');
   const ticked = visible.filter(it => remSelected.has(it)).length;
@@ -2184,6 +2205,7 @@ document.getElementById('remSelectAll').addEventListener('change', e => {
   remRenderTable();
 });
 document.getElementById('remDeleteSelBtn').addEventListener('click', () => {
+  if (!remIsAdmin()) return;
   const items = REM_ITEMS.filter(it => remSelected.has(it));
   if (!items.length) return;
   const list = items.slice(0, 12).map(it => `  • SN ${it.sn}: ${(it.question || '').slice(0, 70)}`).join('\n');
@@ -2199,6 +2221,7 @@ document.getElementById('remDeleteSelBtn').addEventListener('click', () => {
 });
 let remEditingItem = null;               // set while the Add modal is in Edit mode
 document.getElementById('remEditSelBtn').addEventListener('click', () => {
+  if (!remIsAdmin()) return;
   const it = REM_ITEMS.find(x => remSelected.has(x));
   if (!it) return;
   remOpenAddModal();
