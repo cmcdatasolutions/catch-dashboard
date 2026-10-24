@@ -2248,10 +2248,22 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && document.getElementById('remAddModalOverlay').style.display !== 'none') remCloseAddModal();
 });
 
+// Same record = same Item text (ignoring capitals and extra spaces).
+function remNormText(t) { return String(t || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+function remFindDuplicate(question, except) {
+  const q = remNormText(question);
+  return REM_ITEMS.find(it => it !== except && remNormText(it.question) === q);
+}
+
 document.getElementById('remAddItemForm').addEventListener('submit', (e) => {
   e.preventDefault();
   const question = document.getElementById('remFQuestion').value.trim();
   if (!question) return;
+  const dup = remFindDuplicate(question, remEditingItem);
+  if (dup) {
+    alert(`This item already exists as SN ${dup.sn} — nothing was ${remEditingItem ? 'saved' : 'added'}.`);
+    return;
+  }
   const snInput = document.getElementById('remFSn').value.trim();
   if (remEditingItem) {
     const it = remEditingItem;
