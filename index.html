@@ -289,6 +289,11 @@
 .viz-root td.dur { color: var(--text-secondary); white-space: nowrap; }
 .viz-root .chev { display: inline-block; margin-right: 6px; color: var(--text-muted); transition: transform .15s ease; font-size: 10px; }
 .viz-root tr.item-row.expanded .chev { transform: rotate(90deg); }
+.viz-root td.sel, .viz-root th.sel { text-align: center; width: 34px; padding-left: 4px; padding-right: 4px; }
+.viz-root td.sel input, .viz-root th.sel input { width: 16px; height: 16px; cursor: pointer; accent-color: #1F4E79; }
+.viz-root tr.item-row.selected { background: color-mix(in srgb, #2E75B6 9%, transparent); }
+.viz-root .btn.danger { color: #A32D2D; border-color: #E8B4B4; }
+.viz-root .btn:disabled { opacity: .45; cursor: not-allowed; }
 
 .viz-root tr.detail-row td {
   background: color-mix(in srgb, var(--text-primary) 2.5%, transparent);
@@ -769,6 +774,8 @@
       <span class="upload-status idle" id="remGhStatus" title="Click to connect or reload" style="cursor:pointer;">Not connected to GitHub</span>
       <button class="btn" id="remGhConnectBtn" type="button">🔗 Connect GitHub</button>
       <button class="btn primary" id="remAddItemBtn" type="button">+ Add item</button>
+      <button class="btn" id="remEditSelBtn" type="button" disabled title="Tick exactly one item to edit it">✎ Edit selected</button>
+      <button class="btn danger" id="remDeleteSelBtn" type="button" disabled title="Tick items to delete them">🗑 Delete selected</button>
       <button class="btn" id="remExportBtn" type="button">⭳ Export progress</button>
       <label class="btn" for="remImportFile">⭱ Import progress</label>
       <input type="file" id="remImportFile" accept="application/json">
@@ -780,7 +787,8 @@
       <table>
         <thead>
           <tr>
-            <th style="width:55px;">SN</th>
+            <th style="width:72px;">SN</th>
+            <th class="sel"><input type="checkbox" id="remSelectAll" title="Select all items shown"></th>
             <th style="width:auto;">Item</th>
             <th style="width:110px;">Category</th>
             <th style="width:90px;">Owner</th>
@@ -933,7 +941,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 <script>
-const BUILD_VERSION = '2026.10.24-upload-doc';
+const BUILD_VERSION = '2026.10.24-rem-select-gaps';
 console.log('CATCH Dashboard build:', BUILD_VERSION);
 
 // ══ CONSTANTS ════════════════════════════════════════════════════════════════
@@ -1223,8 +1231,14 @@ async function runComplianceCheck() {
         continue;
       }
       if (run.conclusion !== 'success') throw new Error(`run ${run.conclusion}.` + link);
-      setRunCheckStatus('ok', `✓ Compliance check finished ${new Date().toLocaleTimeString()} — tables refreshed.` + link);
+      setRunCheckStatus('ok', `✓ Compliance check finished ${new Date().toLocaleTimeString()} — tables and remediation items refreshed.` + link);
       await autoLoadExcel();
+      // The check also adds new gaps to data.json — reload so the tracker shows
+      // them and holds the latest file version for its next save.
+      if (await remGhLoad()) {
+        remPopulateCategoryFilter(); remRenderAll();
+        if (typeof kpiRenderAll === 'function') kpiRenderAll();
+      }
       return;
     }
     throw new Error('still running after 15 minutes — check the Actions tab, then click Reload from Source');
@@ -1959,7 +1973,8 @@ function remRenderTable() {
     row.className = 'item-row';
     row.dataset.idx = idx;
     row.innerHTML = `
-      <td class="sn"><span class="chev">▶</span>${it.sn}</td>
+      <td class="sn"><span class="chev">▶</span>${remEscapeHtml(it.sn)}</td>
+      <td class="sel"><input type="checkbox" class="rem-sel" aria-label="Select SN ${remEscapeHtml(it.sn)}"></td>
       <td class="q"><div class="qtext">${remEscapeHtml(it.question)}</div></td>
       <td class="cat"></td>
       <td class="owner">${remEscapeHtml(it.owner)}</td>
@@ -1969,7 +1984,16 @@ function remRenderTable() {
       <td class="longtext" title="${remEscapeHtml(it.dependency || '—')}">${remEscapeHtml(it.dependency || '—')}</td>
       <td class="longtext" title="${remEscapeHtml(it.risks || '—')}">${remEscapeHtml(it.risks || '—')}</td>
     `;
-    const statusCell = row.children[6];
+    const selBox = row.querySelector('.rem-sel');
+    selBox.checked = remSelected.has(it);
+    row.classList.toggle('selected', selBox.checked);
+    selBox.addEventListener('click', e => e.stopPropagation());
+    selBox.addEventListener('change', () => {
+      if (selBox.checked) remSelected.add(it); else remSelected.delete(it);
+      row.classList.toggle('selected', selBox.checked);
+      remUpdateSelectionUi();
+    });
+    const statusCell = row.children[7];
     const select = document.createElement('select');
     select.className = 'status-select ' + it.status;
     ['Completed','Pending','Incomplete'].forEach(s => {
@@ -1990,7 +2014,7 @@ function remRenderTable() {
     // Editable category — a plain text box (suggestions come from the same
     // datalist the "Add item" form uses) in place of the old read-only text.
     // Commits on blur/Enter, the same way the status dropdown commits on change.
-    const catCell = row.children[2];
+    const catCell = row.children[3];
     const catInput = document.createElement('input');
     catInput.type = 'text';
     catInput.className = 'cat-input';
@@ -2011,7 +2035,7 @@ function remRenderTable() {
     detail.className = 'detail-row';
     detail.style.display = 'none';
     detail.innerHTML = `
-      <td colspan="9">
+      <td colspan="10">
         <span class="detail-label">Full question / evidence required</span>
         <textarea class="detail-edit" data-field="question" rows="3"></textarea>
         <span class="detail-label">Remediation action</span>
@@ -2053,6 +2077,7 @@ function remRenderTable() {
     tbody.appendChild(detail);
   });
 
+  remUpdateSelectionUi();
   document.getElementById('remEmptyState').style.display = shown === 0 ? 'block' : 'none';
   document.getElementById('remTableSummary').textContent =
     `Showing ${shown} of ${REM_ITEMS.length} items · ${remFmtCost(shownCost)}`;
@@ -2138,6 +2163,54 @@ function remLogImportNote(msg) {
   document.getElementById('remTableSummary').textContent = msg;
 }
 
+// ══ SELECT / DELETE / EDIT ══════════════════════════════════════════════════
+const remSelected = new Set();          // item objects ticked in the table
+function remUpdateSelectionUi() {
+  for (const it of Array.from(remSelected)) if (!REM_ITEMS.includes(it)) remSelected.delete(it);
+  const n = remSelected.size;
+  const del = document.getElementById('remDeleteSelBtn');
+  const edit = document.getElementById('remEditSelBtn');
+  del.disabled = n === 0;  del.textContent = n ? `🗑 Delete selected (${n})` : '🗑 Delete selected';
+  edit.disabled = n !== 1;
+  const visible = remGetFilteredItems();
+  const all = document.getElementById('remSelectAll');
+  const ticked = visible.filter(it => remSelected.has(it)).length;
+  all.checked = visible.length > 0 && ticked === visible.length;
+  all.indeterminate = ticked > 0 && ticked < visible.length;
+}
+document.getElementById('remSelectAll').addEventListener('change', e => {
+  remGetFilteredItems().forEach(it => e.target.checked ? remSelected.add(it) : remSelected.delete(it));
+  remRenderTable();
+});
+document.getElementById('remDeleteSelBtn').addEventListener('click', () => {
+  const items = REM_ITEMS.filter(it => remSelected.has(it));
+  if (!items.length) return;
+  const list = items.slice(0, 12).map(it => `  • SN ${it.sn}: ${(it.question || '').slice(0, 70)}`).join('\n');
+  const more = items.length > 12 ? `\n  …and ${items.length - 12} more` : '';
+  if (!confirm(`Delete ${items.length} item(s) from the remediation table?\n\n${list}${more}\n\nThis is saved to GitHub (the commit history keeps a copy).`)) return;
+  REM_ITEMS = REM_ITEMS.filter(it => !remSelected.has(it));
+  remSelected.clear();
+  remPopulateCategoryFilter();
+  remRenderAll();
+  if (typeof kpiRenderAll === 'function') kpiRenderAll();
+  const sns = items.map(it => it.sn);
+  remGhSave(`Delete ${items.length} item(s): SN ${sns.slice(0, 20).join(', ')}${sns.length > 20 ? '…' : ''}`);
+});
+let remEditingItem = null;               // set while the Add modal is in Edit mode
+document.getElementById('remEditSelBtn').addEventListener('click', () => {
+  const it = REM_ITEMS.find(x => remSelected.has(x));
+  if (!it) return;
+  remOpenAddModal();
+  remEditingItem = it;
+  document.getElementById('remAddModalTitle').textContent = 'Edit item — SN ' + it.sn;
+  document.querySelector('#remAddItemForm button[type="submit"]').textContent = 'Save changes';
+  const set = (id, v) => { document.getElementById(id).value = (v == null || v === '—') ? '' : v; };
+  set('remFSn', it.sn); set('remFQuestion', it.question); set('remFOwner', it.owner);
+  set('remFCategory', it.category); set('remFAction', it.action); set('remFRisks', it.risks);
+  set('remFDependency', it.dependency); set('remFDuration', it.duration); set('remFCost', it.cost);
+  document.getElementById('remFStatus').value = it.status || 'Pending';
+});
+
 function remNextAutoSn() {
   let n = 1;
   const existing = new Set(REM_ITEMS.map(it => it.sn));
@@ -2146,6 +2219,9 @@ function remNextAutoSn() {
 }
 
 function remOpenAddModal() {
+  remEditingItem = null;
+  document.getElementById('remAddModalTitle').textContent = 'Add item';
+  document.querySelector('#remAddItemForm button[type="submit"]').textContent = 'Add item';
   document.getElementById('remAddItemForm').reset();
   document.getElementById('remFStatus').value = 'Pending';
   const dl = document.getElementById('remCategoryOptions');
@@ -2177,6 +2253,34 @@ document.getElementById('remAddItemForm').addEventListener('submit', (e) => {
   const question = document.getElementById('remFQuestion').value.trim();
   if (!question) return;
   const snInput = document.getElementById('remFSn').value.trim();
+  if (remEditingItem) {
+    const it = remEditingItem;
+    const sn = snInput || it.sn;
+    if (sn !== it.sn && REM_ITEMS.some(x => x !== it && x.sn === sn)) {
+      alert(`SN "${sn}" already exists — use a different SN.`);
+      return;
+    }
+    const costRaw = document.getElementById('remFCost').value.trim();
+    Object.assign(it, {
+      sn, question,
+      owner: document.getElementById('remFOwner').value.trim() || '—',
+      category: document.getElementById('remFCategory').value.trim() || 'Uncategorized',
+      action: document.getElementById('remFAction').value.trim() || 'No action recorded yet.',
+      risks: document.getElementById('remFRisks').value.trim() || '—',
+      dependency: document.getElementById('remFDependency').value.trim() || '—',
+      duration: document.getElementById('remFDuration').value.trim() || 'N/A',
+      cost: costRaw ? Math.max(0, Math.round(Number(costRaw))) : 0,
+      status: document.getElementById('remFStatus').value,
+    });
+    remEditingItem = null;
+    remSelected.clear();
+    remCloseAddModal();
+    remPopulateCategoryFilter();
+    remRenderAll();
+    if (typeof kpiRenderAll === 'function') kpiRenderAll();
+    remGhSave(`Edit item: SN ${sn}`);
+    return;
+  }
   const sn = snInput || remNextAutoSn();
   if (REM_ITEMS.some(it => it.sn === sn)) {
     alert(`SN "${sn}" already exists — use a different SN or leave it blank to auto-assign.`);
